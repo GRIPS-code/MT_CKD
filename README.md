@@ -52,14 +52,16 @@ make
 
 # Run Example
 
-To run MT_CKD as a standalone program instead of in LBLRTM:
+To run MT_CKD as a standalone program:
 
 ```
-cd run_example/
-ln -s ../cntnm_v3.5_linux_pgi_dbl cntnm # assuming v3.5 was built with PGI in double precision (linuxPGIdbl)
-./cntnm (0, enter)
+make check
 ```
 
-Push 0, then enter, and `CNTNM.OPTDPT` and `WATER.COEF` will be written to working directory. These can be compared with `CNTNM.OPTDPT_mt_ckd_AER` and `WATER.COEF_mt_ckd_AER`, which are included in version control and are considered the baseline calculations. They change with every release and will be updated accordingly.
+`CNTNM.OPTDPT` and `WATER.COEF` will be written to `tests` directory. These can be compared
+with `CNTNM.OPTDPT_mt_ckd_AER` and `WATER.COEF_mt_ckd_AER`, which are included in version
+control and are considered the baseline calculations. They change with every release and will
+be updated accordingly.
 
-For other runs of the continuum standalone program, the user can edit `INPUT.example` in the `run_example` directory.
+For other runs of the continuum standalone program, the user can edit `INPUT.example` in the
+`tests` directory.
