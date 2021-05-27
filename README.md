@@ -42,29 +42,13 @@ Though not necessary, the move to `cntnm` is for consistency with previous relea
 
 # Building
 
-To build the continuum model:
+Building this model requires autotools and a fortran compiler.  To build, run:
 
 ```
-cd MT_CKD/build
-make -f make_cntnm $TARGET
+autoreconf --install
+./configure
+make
 ```
-
-The `TARGET` environment variable depends on the user's operating system, compiler, and desired precision. Available targets are:
-
-| Target | Description | Compiler |
-| :--- | :--- | :--- |
-| `aixIBMsgl` | IBM/AIX OS using IBM fortran,single precision| `xlf90` |
-| `linuxPGIsgl` | Linux OS using PGI fortran,single precision |  `pgf90` |
-| `linuxGNUsgl` | Linux OS using GNU fortran,single precision | `gfortran` |
-| `linuxG95sgl` | Linux OS using G95 fortran,single precision | `g95` |
-| `inuxINTELsgl` | Linux OS using Intel fortran,single precision | `ifort` |
-| `mingwGNUsgl` | Windows unix shell environment using gfortran,single precision | `gfortran` |
-| `osxABSOFTsgl` | Mac OS_X using Absoft Pro fortran,singleprecision | `f90` |
-| `osxGNUsgl` | Mac OS_X using GNU fortran,singleprecision | `gfortran` |
-| `osxIBMsgl` | Mac OS_X using IBM XL fortran,singleprecision | `xlf90` |
-| `osxINTELsgl` | Mac OS_X using Intel fortran,single precision | `ifort` |
-| `sunSUNsgl` | Sun/Solaris OS using Sun fortran,single precision | `sunf90` |
-| `sgiMIPSsgl` | SGI/IRIX64 OS using MIPS fortran,single precision | `f90` |
 
 # Run Example
 
