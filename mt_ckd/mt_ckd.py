@@ -57,10 +57,10 @@ class CarbonDioxideContinuum(Continuum):
 
 class OzoneContinuum(Continuum):
     def __init__(self, path):
-        self.data = 
+        self.data = None
 
     def spectra(self, temperature):
-        
+        pass
 
 
 
@@ -125,5 +125,6 @@ if __name__ == "__main__":
     plt.plot(h2o_foreign.grid(), h2o_foreign.spectra(), label="H2O foreign")
     co2 = CarbonDioxideContinuum("mt-ckd.nc")
     plt.plot(co2.grid(), co2.spectra(300.), label="CO2")
+    plt.yscale("log")
     plt.legend()
     plt.show()
