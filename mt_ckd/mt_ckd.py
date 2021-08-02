@@ -1,9 +1,21 @@
 from netCDF4 import Dataset
-from numpy import copy, power, zeros
+from numpy import asarray, copy, power, zeros
 
 
 class Spectrum(object):
+    """Helper class that reads data from a variable in the input dataset.
+
+    Attributes:
+        path: Path to the netcdf dataset.
+        grid: Dictionary describing the wavenumber grid.
+    """
     def __init__(self, path, name):
+        """Reads the data from a variable in the input dataset.
+
+        Args:
+            path: Path to the netcdf dataset.
+            name: Name of the variable in the dataset.
+        """
         with Dataset(path, "r") as dataset:
             v = dataset.variables[name]
             self.data = copy(v[:])
@@ -12,19 +24,53 @@ class Spectrum(object):
 #           self.units = v.getncattr("units")
 
     def wavenumbers(self):
-        return [self.grid["lower_bound"] + i*self.grid["resolution"]
-                for i in range(self.data.size)]
+        """Cacluates the wavenumber grid [cm-1] for the variable.
+
+        Returns:
+            A 1d numpy array containing the wavenumber grid [cm-1].
+        """
+        return asarray([self.grid["lower_bound"] + i*self.grid["resolution"]
+                        for i in range(self.data.size)])
 
 
 class Continuum(object):
+    """Abstract class for gridded continuum coefficients."""
     def __init__(self, path):
+        """Reads in the necessary data from an input dataset.
+
+        Args:
+            path: Path to the netcdf dataset.
+        """
         raise NotImplementedError("You must override this class.")
 
-    def spectra(self):
+    def spectra(self, temperature):
+        """Calculates the continuum coefficients at an input temperature.
+
+        Args:
+            temperature: Temperaure [K].
+
+        Returns:
+            An array of continuum coefficients.
+        """
+        raise NotImplementedError("You must override this method.")
+
+    def grid(self):
+        """Calculates the wavenumber grid [cm-1].
+
+        Returns:
+            A 1d numpy array containing the wavenumber grid [cm-1].
+        """
         raise NotImplementedError("You must override this method.")
 
 
 class CarbonDioxideContinuum(Continuum):
+    """Carbon dioxide continuum coefficients.
+
+    Attributes:
+        data: Spectrum object containing data read from an input dataset.
+        t_correction: Temperature correction coefficients.
+        xfac_co2: Spectrum object of chi-factors?
+    """
     def __init__(self, path):
         self.data = Spectrum(path, "bfco2")
         self.t_correction = [1.44e-01, 3.61e-01, 5.71e-01, 7.63e-01, 8.95e-01,
@@ -49,22 +95,61 @@ class CarbonDioxideContinuum(Continuum):
                 t_factor[i] = power(temperature/246., self.t_correction[jfac])
             else:
                 t_factor[i] = 1.
-        return scale[:]*t_factor[:]*self.data.data[:]
+        return 1.e-20*scale[:]*t_factor[:]*self.data.data[:]
 
     def grid(self):
         return self.data.wavenumbers()
 
 
-class OzoneContinuum(Continuum):
+class OzoneChappuisWulfContinuum(Continuum):
     def __init__(self, path):
-        self.data = None
+        self.data = [Spectrum(path, "x_o2"), Spectrum(path, "y_o2"), Spectrum(path, "z_o2")]
 
     def spectra(self, temperature):
-        pass
+        dt = temperature - 273.15
+        return 1.e-20*(self.data[0].data[:] + self.data[1].data[:]*dt +
+                       self.data[2].data[:]*dt*dt)/self.data[0].wavenumbers()[:]
+
+    def grid(self):
+        return self.data[0].wavenumbers()
+
+
+class OzoneHartleyHugginsContinuum(Continuum):
+    def __init__(self, path):
+        self.data = [Spectrum(path, "o3_hh0"), Spectrum(path, "o3_hh1"),
+                     Spectrum(path, "o3_hh2")]
+
+    def spectra(self, temperature):
+        dt = temperature - 273.15
+        return 1.e-20*(self.data[0].data[:]/self.data[0].wavenumbers()[:])* \
+               (1. + self.data[1].data[:]*dt + self.data[2].data[:]*dt*dt)
+
+    def grid(self):
+        return self.data[0].wavenumbers()
+
+
+class OzoneUVContinuum(Continuum):
+    def __init__(self, path):
+        self.data = Spectrum(path, "o3_huv")
+
+    def spectra(self):
+        return self.data.data[:]/self.data.wavenumbers()[:]
+
+    def grid(self):
+        return self.data.wavenumbers()
+
+
+
 
 
 
 class WaterVaporForeignContinuum(Continuum):
+    """Water vapor foreign continuum coefficients.
+
+    Attributes:
+        data: Spectrum object containing data read from an input dataset.
+        xfac_rhu: List of ???
+    """
     def __init__(self, path):
         self.data = Spectrum(path, "bfh2o")
         self.xfac_rhu = [0.7620, 0.7840, 0.7820, 0.7840, 0.7620, 0.7410, 0.7970,
@@ -104,6 +189,12 @@ class WaterVaporForeignContinuum(Continuum):
 
 
 class WaterVaporSelfContinuum(Continuum):
+    """Water vapor self continuum coefficients.
+
+    Attributes:
+        data: Dictionary that maps temperatures (keys) to Spectrum objects containing
+              data read from an input dataset (values).
+    """
     def __init__(self, path):
         self.data = {296: Spectrum(path, "bs296"),
                      260: Spectrum(path, "bs260")}
@@ -123,8 +214,17 @@ if __name__ == "__main__":
     plt.plot(h2o_self.grid(), h2o_self.spectra(300.), label="H2O self")
     h2o_foreign = WaterVaporForeignContinuum("mt-ckd.nc")
     plt.plot(h2o_foreign.grid(), h2o_foreign.spectra(), label="H2O foreign")
+
     co2 = CarbonDioxideContinuum("mt-ckd.nc")
     plt.plot(co2.grid(), co2.spectra(300.), label="CO2")
+
+    o3_cw = OzoneChappuisWulfContinuum("mt-ckd.nc")
+    plt.plot(o3_cw.grid(), o3_cw.spectra(300.), label="O3_cw")
+    o3_hh = OzoneHartleyHugginsContinuum("mt-ckd.nc")
+    plt.plot(o3_hh.grid(), o3_hh.spectra(330.), label="O3_hh")
+    o3_uv = OzoneUVContinuum("mt-ckd.nc")
+    plt.plot(o3_uv.grid(), o3_uv.spectra(), label="O3_uv")
+
     plt.yscale("log")
     plt.legend()
     plt.show()
