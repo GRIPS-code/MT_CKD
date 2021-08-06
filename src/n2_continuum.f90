@@ -1,4 +1,5 @@
 module n2_continuum
+use, intrinsic :: iso_fortran_env, only: real64
 use netcdf
 implicit none
 
@@ -11,17 +12,17 @@ contains
 
 subroutine xn2_r(v1c, v2c, dvc, nptc, c, fo2, tave, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c, fo2
-  real, intent(in) :: tave
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c, fo2
+  real(kind=real64), intent(in) :: tave
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, nptb, npts, varid
-  real :: dvb, dvs, sf_t, tfac, v1b, v2b, v1s, v2s, xn2, xo2
-  real, dimension(:), allocatable :: c_220, c_296, sf_220, sf_296
+  real(kind=real64) :: dvb, dvs, sf_t, tfac, v1b, v2b, v1s, v2s, xn2, xo2
+  real(kind=real64), dimension(:), allocatable :: c_220, c_296, sf_220, sf_296
 
 !
 !     Model used:
@@ -92,7 +93,6 @@ subroutine xn2_r(v1c, v2c, dvc, nptc, c, fo2, tave, v1ss, v2ss, v1abs, v2abs, pa
   v2c = v1c + dvs*real(nptc - 1)
 
 !*******  absorption coefficient in units of cm-1 amagat-2
-  allocate(c(nptc), fo2(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -110,17 +110,17 @@ end subroutine xn2_r
 
 subroutine n2_ver_1(v1c, v2c, dvc, nptc, c, c1, c2, t, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c, c1, c2
-  real, intent(in) :: t
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c, c1, c2
+  real(kind=real64), intent(in) :: t
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: a_o2, dvs, vj, v1s, v2s, xt_lin, xtfac
-  real, dimension(:), allocatable :: xn2_272, xn2_228, a_h2o
+  real(kind=real64) :: a_o2, dvs, vj, v1s, v2s, xt_lin, xtfac
+  real(kind=real64), dimension(:), allocatable :: xn2_272, xn2_228, a_h2o
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -182,7 +182,6 @@ subroutine n2_ver_1(v1c, v2c, dvc, nptc, c, c1, c2, t, v1ss, v2ss, v1abs, v2abs,
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc), c1(nptc), c2(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -208,16 +207,16 @@ end subroutine n2_ver_1
 
 subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc ![cm-1].
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c ![1.e20 cm3 amagat-1].
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, vj, v1s, v2s
-  real, dimension(:), allocatable :: xn2
+  real(kind=real64) :: dvs, vj, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: xn2
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -237,7 +236,7 @@ subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
 !     the absorption coefficients are for pure nitrogen (absorber and
 !     broadener.
-!
+
   dvc = dvs
   v1ss = v1s
   v2ss = v2s
@@ -255,8 +254,7 @@ subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
-!
-  allocate(c(nptc))
+
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.

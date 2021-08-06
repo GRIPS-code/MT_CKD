@@ -1,5 +1,7 @@
 module h2o_continuum
+use, intrinsic :: iso_fortran_env, only: real64
 use netcdf
+use utils
 implicit none
 
 
@@ -11,16 +13,16 @@ contains
 
 subroutine sl296(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, v1s, v2s
-  real, dimension(:), allocatable :: s
+  real(kind=real64) :: dvs, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: s
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -52,7 +54,6 @@ subroutine sl296(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -65,16 +66,16 @@ end subroutine sl296
 
 subroutine sl260(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, v1s, v2s
-  real, dimension(:), allocatable :: s
+  real(kind=real64) :: dvs, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: s
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -106,7 +107,6 @@ subroutine sl260(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -119,16 +119,16 @@ end subroutine sl260
 
 subroutine frn296(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, v1s, v2s
-  real, dimension(:), allocatable :: s
+  real(kind=real64) :: dvs, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: s
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -160,7 +160,6 @@ subroutine frn296(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.

@@ -401,7 +401,7 @@ if __name__ == "__main__":
     path_length = 1. # [cm].
 
     #MT-CKD required variables.
-    w = {"dry": (pressure/1013.)*(273./temperature)*path_length*
+    w = {"dry": 2.6867775e19*(pressure/1013.)*(273./temperature)*path_length*
                 (1. - volume_mixing_ratio["H2O"]),}
     for key, value in volume_mixing_ratio.items():
         w[key] = w["dry"]*value

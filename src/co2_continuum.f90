@@ -1,4 +1,5 @@
 module co2_continuum
+use, intrinsic :: iso_fortran_env, only: real64
 use netcdf
 implicit none
 
@@ -11,18 +12,18 @@ contains
 
 subroutine frnco2(v1c, v2c, dvc, nptc, c, tave, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(in) :: tave
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(in) :: tave
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, tcor, trat, v1s, v2s
-  real, dimension(:), allocatable :: s
-  real, dimension(1196:1220) :: tdep_bandhead
+  real(kind=real64) :: dvs, tcor, trat, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: s
+  real(kind=real64), dimension(1196:1220) :: tdep_bandhead
 
 !     temparature dependence coefficients for wavenumbers between 2386
 !     and 2434. computed based on (line-coupled) continuum coefficients
@@ -67,7 +68,6 @@ subroutine frnco2(v1c, v2c, dvc, nptc, c, tave, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.

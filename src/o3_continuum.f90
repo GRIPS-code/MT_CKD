@@ -1,4 +1,5 @@
 module o3_continuum
+use, intrinsic :: iso_fortran_env, only: real64
 use netcdf
 implicit none
 
@@ -11,16 +12,16 @@ contains
 
 subroutine xo3chp(v1c, v2c, dvc, nptc, c0, c1, c2, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c0, c1, c2
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c0, c1, c2
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, vj, v1s, v2s
-  real, dimension(:), allocatable :: x, y, z
+  real(kind=real64) :: dvs, vj, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: x, y, z
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -56,7 +57,6 @@ subroutine xo3chp(v1c, v2c, dvc, nptc, c0, c1, c2, v1ss, v2ss, v1abs, v2abs, pat
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c0(nptc), c1(nptc), c2(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     if ((i .lt. 1) .or. (i .gt. npts)) then
@@ -77,16 +77,16 @@ end subroutine xo3chp
 
 subroutine o3hht0(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1,i2, j, ncid, npts, varid
-  real :: dvs, vj, v1s, v2s
-  real, dimension(:), allocatable :: s
+  real(kind=real64) :: dvs, vj, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: s
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -118,7 +118,6 @@ subroutine o3hht0(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -132,15 +131,15 @@ end subroutine o3hht0
 
 subroutine o3hht1(v1c, v2c, dvc, nptc, c, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, v1s, v2s
-  real, dimension(:), allocatable :: s
+  real(kind=real64) :: dvs, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: s
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -170,7 +169,6 @@ subroutine o3hht1(v1c, v2c, dvc, nptc, c, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -183,15 +181,15 @@ end subroutine o3hht1
 
 subroutine o3hht2(v1c, v2c, dvc, nptc, c, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, v1s, v2s
-  real, dimension(:), allocatable :: s
+  real(kind=real64) :: dvs, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: s
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -221,7 +219,6 @@ subroutine o3hht2(v1c, v2c, dvc, nptc, c, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -234,16 +231,16 @@ end subroutine o3hht2
 
 subroutine o3hhuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, vj, v1s, v2s
-  real, dimension(:), allocatable :: s
+  real(kind=real64) :: dvs, vj, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: s
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -275,7 +272,6 @@ subroutine o3hhuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.

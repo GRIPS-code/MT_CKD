@@ -1,4 +1,5 @@
 module o2_continuum
+use, intrinsic :: iso_fortran_env, only: real64
 use netcdf
 implicit none
 
@@ -11,17 +12,17 @@ contains
 
 subroutine o2_ver_1(v1c, v2c, dvc, nptc, c, t, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(in) :: t
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(in) :: t
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, factor, vj, v1s, v2s, xktfac, xlosmt
-  real, dimension(:), allocatable :: xo2, xo2t
+  real(kind=real64) :: dvs, factor, vj, v1s, v2s, xktfac, xlosmt
+  real(kind=real64), dimension(:), allocatable :: xo2, xo2t
 
 !     oxygen collision induced fundamental
 !     f. thibault, v. menoux, r. le doucen, l. rosenman, j.-m. hartmann,
@@ -86,16 +87,16 @@ end subroutine o2_ver_1
 
 subroutine o2inf1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, vj, v1s, v2s
-  real, dimension(:), allocatable :: xo2inf1
+  real(kind=real64) :: dvs, vj, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: xo2inf1
 
 !        o2 continuum formulated by mate et al. over the spectral region
 !        7550-8486 cm-1:  "absolute intensities for the o2 1.27 micron
@@ -140,7 +141,6 @@ subroutine o2inf1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -154,14 +154,15 @@ end subroutine o2inf1
 
 subroutine o2inf2(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
 
   integer :: j
-  real :: damp1, damp2, dvs, dv1, dv2, hw1, hw2, o2inf, s1, s2, v1_osc, v2_osc, vj, v1s, v2s
+  real(kind=real64) :: damp1, damp2, dvs, dv1, dv2, hw1, hw2, o2inf, s1, s2, v1_osc, &
+                       v2_osc, vj, v1s, v2s
 
   v1_osc = 9375.
   hw1 = 58.96
@@ -187,7 +188,6 @@ subroutine o2inf2(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs)
   nptc = (v2c - v1c)/dvc + 3.01
   v2c = v1c + dvc*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     c(j) = 0.
     vj = v1c + dvc*real(j - 1)
@@ -214,16 +214,16 @@ end subroutine o2inf2
 
 subroutine o2inf3(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, vj, v1s, v2s
-  real, dimension(:), allocatable :: xo2inf3
+  real(kind=real64) :: dvs, vj, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: xo2inf3
 
 !
 !        O2 A-band continuum formulated by Mlawer based on solar FTS measurements.
@@ -264,7 +264,6 @@ subroutine o2inf3(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -278,17 +277,17 @@ end subroutine o2inf3
 
 subroutine o2_vis(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: factor, vj, xlosmt
-  real :: v1s, v2s, dvs
-  real, dimension(:), allocatable :: s
+  real(kind=real64) :: factor, vj, xlosmt
+  real(kind=real64) :: v1s, v2s, dvs
+  real(kind=real64), dimension(:), allocatable :: s
 
 !
 !        o2 continuum formulated by greenblatt et al. over the spectral
@@ -338,7 +337,6 @@ subroutine o2_vis(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -352,15 +350,15 @@ end subroutine o2_vis
 
 subroutine o2herz(v1c, v2c, dvc, nptc, c, t, p, v1ss, v2ss, v1abs, v2abs)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(in) :: t, p
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(in) :: t, p
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
 
   integer :: i, i1, i2, j
-  real :: dvs, herz, vj, v1s
+  real(kind=real64) :: dvs, herz, vj, v1s
 
   v1s = 36000.
   v1ss = v1s
@@ -386,7 +384,6 @@ subroutine o2herz(v1c, v2c, dvc, nptc, c, t, p, v1ss, v2ss, v1abs, v2abs)
 !        Herzberg O2 continuum is a function, not block data
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -401,10 +398,10 @@ end subroutine o2herz
 
 subroutine hertda(herz, v)
 
-  real, intent(out) :: herz
-  real, intent(in) :: v
+  real(kind=real64), intent(out) :: herz
+  real(kind=real64), intent(in) :: v
 
-  real :: corr, yratio
+  real(kind=real64) :: corr, yratio
 !
 !     HERZBERG O2 ABSORPTION
 !     HALL,1987 PRIVATE COMMUNICATION, BASED ON:
@@ -451,8 +448,8 @@ end subroutine hertda
 
 subroutine herprs(herz, t, p)
 
-  real, intent(inout) :: herz
-  real, intent(in) :: t, p
+  real(kind=real64), intent(inout) :: herz
+  real(kind=real64), intent(in) :: t, p
 !
 !     CORRECT THE HERZBERG CONTINUUM CROSS SECTION FOR PRESSURE
 !     DEPENDENCE; BASED ON SHARDANAND, JQRST, 18, 525-530, 1977.
@@ -490,16 +487,16 @@ end subroutine herprs
 !> @brief O2 continuum in the far-uv is from lu et al. (2010).
 subroutine o2fuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
-  real, intent(out) :: v1c, v2c, dvc
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real, dimension(:), allocatable, intent(inout) :: c
-  real, intent(out) :: v1ss, v2ss
-  real, intent(in) :: v1abs, v2abs
+  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
   integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real :: dvs, vj, v1s, v2s
-  real, dimension(:), allocatable  :: s
+  real(kind=real64) :: dvs, vj, v1s, v2s
+  real(kind=real64), dimension(:), allocatable  :: s
 
   !Read data from netcdf file.
   err = nf90_open(path, nf90_nowrite, ncid)
@@ -533,7 +530,6 @@ subroutine o2fuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
