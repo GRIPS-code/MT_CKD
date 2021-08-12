@@ -4,10 +4,42 @@ use netcdf
 implicit none
 
 
+!> @brief Spectral grid.
+type, public :: SpectralGrid
+  real(kind=real64) :: x0 !< Lower bound [cm-1].
+  real(kind=real64) :: xn !< Upper bound [cm-1].
+  real(kind=real64) :: dx !< Resolution [cm-1].
+  integer :: n !< Number of grid points.
+  contains
+  procedure :: construct => construct_grid
+end type SpectralGrid
+
+
+real(kind=real64), parameter, public :: t0 = 296._real64 ![K].
+real(kind=real64), parameter, public :: t_273 = 273._real64 ![K].
+real(kind=real64), parameter, public :: p0 = 1013._real64 ![mb].
+real(kind=real64), parameter, public :: loschmidt = 2.6867775e19 !Loschmidt constant [cm-3].
+real(kind=real64), parameter, public :: radcn2 = 1.4387752 ![cm K].
+
+
 public :: nc_check, pre_xint, radfn, xint
 
 
 contains
+
+
+subroutine construct_grid(self, x0, xn, dx)
+
+  class(SpectralGrid), intent(inout) :: self
+  real(kind=real64), intent(in) :: x0 !< Lower bound [cm-1].
+  real(kind=real64), intent(in) :: xn !< Upper bound [cm-1].
+  real(kind=real64), intent(in) :: dx !< Resolution [cm-1].
+
+  self%x0 = x0
+  self%xn = xn
+  self%dx = dx
+  self%n = int(1._real64 + (xn - x0)/dx)
+end subroutine construct_grid
 
 
 !> @brief Exits the program if a netCDF error occurs.

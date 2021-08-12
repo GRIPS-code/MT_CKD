@@ -1,10 +1,13 @@
 module o2_continuum
 use, intrinsic :: iso_fortran_env, only: real64
 use netcdf
+use utils
 implicit none
 
 
-public :: o2_ver_1, o2_vis, o2fuv, o2herz, o2inf1, o2inf2, o2inf3
+public :: oxygen_fundamental_continuum, oxygen_nir1_continuum, oxygen_nir2_continuum, &
+          oxygen_nir3_continuum, oxygen_visible_continuum, oxygen_herzberg_continuum, &
+          oxygen_uv_continuum
 
 
 contains
@@ -14,46 +17,32 @@ subroutine o2_ver_1(v1c, v2c, dvc, nptc, c, t, v1ss, v2ss, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), dimension(:), intent(inout) :: c ![cm3].
   real(kind=real64), intent(in) :: t
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
-  integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real(kind=real64) :: dvs, factor, vj, v1s, v2s, xktfac, xlosmt
+  integer :: dimid, i, i1, i2, j, ncid, npts, varid
+  real(kind=real64) :: dvs, factor, vj, v1s, v2s, xktfac
   real(kind=real64), dimension(:), allocatable :: xo2, xo2t
 
-!     oxygen collision induced fundamental
-!     f. thibault, v. menoux, r. le doucen, l. rosenman, j.-m. hartmann,
-!     and ch. boulet
-!     infrared collision-induced absorption by o2 near 6.4 microns for
-!     atmospheric applications: measurements and emprirical modeling,
-!     appl. optics, 35, 5911-5917, (1996).
-
   !Read data from netcdf file.
-  err = nf90_open(path, nf90_nowrite, ncid)
-  err = nf90_inq_varid(ncid, "o2_f", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvs)
-  err = nf90_inq_dimid(ncid, "n10", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=npts)
+  call nc_check(nf90_open(path, nf90_nowrite, ncid))
+  call nc_check(nf90_inq_varid(ncid, "o2_f", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvs))
+  call nc_check(nf90_inq_dimid(ncid, "n10", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=npts))
   allocate(xo2(npts), xo2t(npts))
-  err = nf90_get_var(ncid, varid, xo2)
-  err = nf90_inq_varid(ncid, "o2_t", varid)
-  err = nf90_get_var(ncid, varid, xo2t)
-  err = nf90_close(ncid)
+  call nc_check(nf90_get_var(ncid, varid, xo2))
+  call nc_check(nf90_inq_varid(ncid, "o2_t", varid))
+  call nc_check(nf90_get_var(ncid, varid, xo2t))
+  call nc_check(nf90_close(ncid))
 
-  xlosmt = 2.68675e+19
-  xktfac = (1./296.) - (1./t)
-!
-!     correct formulation for consistency with lblrtm:
-  factor = (1.e+20/xlosmt)
-!
-!     a factor of 0.21, the mixing ratio of oxygen, in the thibault et
-!     al. formulation is not included here.  this factor is in the
-!     column amount.
+  xktfac = (1._real64/296._real64) - (1._real64/t) ![K-1].
+  factor = (1.e20_real64/loschmidt) ![cm3].
 
   dvc = dvs
   v1ss = v1s
@@ -64,79 +53,11 @@ subroutine o2_ver_1(v1c, v2c, dvc, nptc, c, t, v1ss, v2ss, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
-  nptc = i2-i1+3
-  if (nptc .gt. npts) nptc = npts + 4
-  v2c = v1c + dvs*real(nptc - 1)
-
-  do j = 1, nptc
-    i = i1 + (j - 1)
-    c(j) = 0.
-    if ((i .lt. 1) .or. (i .gt. npts)) continue
-    vj = v1c + dvc*real(j - 1)
-!     the radiation field is removed with 1/vj
-    c(j) = factor*xo2(i)*exp(xo2t(i)*xktfac)/vj
-  enddo
-  deallocate(xo2, xo2t)
-end subroutine o2_ver_1
-
-
-subroutine o2inf1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
-
-  real(kind=real64), intent(out) :: v1c, v2c, dvc
-  integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c
-  real(kind=real64), intent(out) :: v1ss, v2ss
-  real(kind=real64), intent(in) :: v1abs, v2abs
-  character(len=*), intent(in) :: path
-
-  integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real(kind=real64) :: dvs, vj, v1s, v2s
-  real(kind=real64), dimension(:), allocatable :: xo2inf1
-
-!        o2 continuum formulated by mate et al. over the spectral region
-!        7550-8486 cm-1:  "absolute intensities for the o2 1.27 micron
-!        continuum absorption", b. mate, c. lugez, g.t. fraser, and
-!        w.j. lafferty, j. geophys. res., 104, 30,585-30,590, 1999.
-!
-!        the units of these continua coefficients are
-!         1 / (amagat_o2*amagat_air).
-!        also, refer to the paper "observed  atmospheric
-!        collision induced absorption in near infrared oxygen bands",
-!        mlawer, clough, brown, stephen, landry, goldman, & murcray,
-!        journal of geophysical research (1997).
-
-  !Read data from netcdf file.
-  err = nf90_open(path, nf90_nowrite, ncid)
-  err = nf90_inq_varid(ncid, "o2_inf1", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvs)
-  err = nf90_inq_dimid(ncid, "n11", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=npts)
-  allocate(xo2inf1(npts))
-  err = nf90_get_var(ncid, varid, xo2inf1)
-  err = nf90_close(ncid)
-
-  dvc = dvs
-  v1ss = v1s
-  v2ss = v2s
-
-  v1c = v1abs - dvc
-  v2c = v2abs + dvc
-
-  if (v1c .lt. v1s) then
-    i1 = -1
-  else
-    i1 = (v1c - v1s)/dvs + 0.01
-  endif
-
-  v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
@@ -146,7 +67,62 @@ subroutine o2inf1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
     c(j) = 0.
     if ((i .lt. 1) .or. (i .gt. npts)) continue
     vj = v1c + dvc*real(j - 1)
-    c(j) = xo2inf1(i)/vj
+    c(j) = factor*xo2(i)*exp(xo2t(i)*xktfac)/vj ![cm3].
+  enddo
+  deallocate(xo2, xo2t)
+end subroutine o2_ver_1
+
+
+subroutine o2inf1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
+
+  real(kind=real64), intent(out) :: v1c, v2c, dvc
+  integer, intent(out) :: nptc
+  real(kind=real64), dimension(:), intent(inout) :: c !unitless.
+  real(kind=real64), intent(out) :: v1ss, v2ss
+  real(kind=real64), intent(in) :: v1abs, v2abs
+  character(len=*), intent(in) :: path
+
+  integer :: dimid, i, i1, i2, j, ncid, npts, varid
+  real(kind=real64) :: dvs, vj, v1s, v2s
+  real(kind=real64), dimension(:), allocatable :: xo2inf1
+
+  !Read data from netcdf file.
+  call nc_check(nf90_open(path, nf90_nowrite, ncid))
+  call nc_check(nf90_inq_varid(ncid, "o2_inf1", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvs))
+  call nc_check(nf90_inq_dimid(ncid, "n11", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=npts))
+  allocate(xo2inf1(npts))
+  call nc_check(nf90_get_var(ncid, varid, xo2inf1))
+  call nc_check(nf90_close(ncid))
+
+  dvc = dvs
+  v1ss = v1s
+  v2ss = v2s
+
+  v1c = v1abs - dvc
+  v2c = v2abs + dvc
+
+  if (v1c .lt. v1s) then
+    i1 = -1
+  else
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
+  endif
+
+  v1c = v1s + dvs*real(i1 - 1)
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
+  nptc = i2 - i1 + 3
+  if (nptc .gt. npts) nptc = npts + 4
+  v2c = v1c + dvs*real(nptc - 1)
+
+  do j = 1, nptc
+    i = i1 + (j - 1)
+    c(j) = 0.
+    if ((i .lt. 1) .or. (i .gt. npts)) continue
+    vj = v1c + dvc*real(j - 1)
+    c(j) = xo2inf1(i)/vj !unitless.
   enddo
   deallocate(xo2inf1)
 end subroutine o2inf1
@@ -156,7 +132,7 @@ subroutine o2inf2(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), dimension(:), intent(inout) :: c ![cm3].
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
 
@@ -164,16 +140,16 @@ subroutine o2inf2(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs)
   real(kind=real64) :: damp1, damp2, dvs, dv1, dv2, hw1, hw2, o2inf, s1, s2, v1_osc, &
                        v2_osc, vj, v1s, v2s
 
-  v1_osc = 9375.
-  hw1 = 58.96
-  v2_osc = 9439.
-  hw2 = 45.04
-  s1 = 1.166e-04
-  s2 = 3.086e-05
+  v1_osc = 9375._real64
+  hw1 = 58.96_real64
+  v2_osc = 9439._real64
+  hw2 = 45.04_real64
+  s1 = 1.166e-04_real64
+  s2 = 3.086e-05_real64
 
-  v1s = 9100.
-  v2s = 11000.
-  dvs = 2.
+  v1s = 9100._real64
+  v2s = 11000._real64
+  dvs = 2._real64
   dvc = dvs
   v1ss = v1s
   v2ss = v2s
@@ -183,29 +159,29 @@ subroutine o2inf2(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs)
 
   ! the following lines prevent a possible problem that can only occur if
   ! v2abs-v1abs >> 2000 cm-1 (i.e. in the standalone continuum code).
-  if (v1c .lt. v1s) v1c = v1s - 2.*dvs
-  if (v2c .gt. v2s) v2c = v2s + 2.*dvs
-  nptc = (v2c - v1c)/dvc + 3.01
+  if (v1c .lt. v1s) v1c = v1s - 2._real64*dvs
+  if (v2c .gt. v2s) v2c = v2s + 2._real64*dvs
+  nptc = int((v2c - v1c)/dvc + 3.01_real64)
   v2c = v1c + dvc*real(nptc - 1)
 
   do j = 1, nptc
-    c(j) = 0.
+    c(j) = 0._real64
     vj = v1c + dvc*real(j - 1)
     if ((vj .gt. v1s) .and. (vj .lt. v2s)) then
       dv1 = vj - v1_osc
       dv2 = vj - v2_osc
-      if (dv1 .lt. 0.0) then
-        damp1 = exp(dv1/176.1)
+      if (dv1 .lt. 0._real64) then
+        damp1 = exp(dv1/176.1_real64)
       else
-        damp1 = 1.0
+        damp1 = 1._real64
       endif
-      if (dv2 .lt. 0.0) then
-        damp2 = exp(dv2/176.1)
+      if (dv2 .lt. 0._real64) then
+        damp2 = exp(dv2/176.1_real64)
       else
-        damp2 = 1.0
+        damp2 = 1._real64
       endif
-      o2inf = 0.31831*(((s1*damp1/hw1)/(1. + (dv1/hw1)**2)) &
-              + ((s2*damp2/hw2)/(1. + (dv2/hw2)**2)))*1.054
+      o2inf = 0.31831_real64*(((s1*damp1/hw1)/(1._real64 + (dv1/hw1)**2)) &
+              + ((s2*damp2/hw2)/(1._real64 + (dv2/hw2)**2)))*1.054_real64
       c(j) = o2inf/vj
     endif
   enddo
@@ -216,34 +192,26 @@ subroutine o2inf3(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), dimension(:), intent(inout) :: c !unitless.
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
-  integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
+  integer :: dimid, i, i1, i2, j, ncid, npts, varid
   real(kind=real64) :: dvs, vj, v1s, v2s
   real(kind=real64), dimension(:), allocatable :: xo2inf3
 
-!
-!        O2 A-band continuum formulated by Mlawer based on solar FTS measurements.
-!        See Payne et al. (2020) "Absorption Coefficient (ABSCO) Tables for the
-!        Orbiting Carbon Observatories: Version 5.1", JQSRT
-!
-!        Units of these coefficients are 1 / (amagat_O2*amagat_air)
-!        Spectral range of coefficients is 12961.5 - 13221.5 cm-1.
-!
   !Read data from netcdf file.
-  err = nf90_open(path, nf90_nowrite, ncid)
-  err = nf90_inq_varid(ncid, "o2_inf3", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvs)
-  err = nf90_inq_dimid(ncid, "n12", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=npts)
+  call nc_check(nf90_open(path, nf90_nowrite, ncid))
+  call nc_check(nf90_inq_varid(ncid, "o2_inf3", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvs))
+  call nc_check(nf90_inq_dimid(ncid, "n12", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=npts))
   allocate(xo2inf3(npts))
-  err = nf90_get_var(ncid, varid, xo2inf3)
-  err = nf90_close(ncid)
+  call nc_check(nf90_get_var(ncid, varid, xo2inf3))
+  call nc_check(nf90_close(ncid))
 
   dvc = dvs
   v1ss = v1s
@@ -255,21 +223,21 @@ subroutine o2inf3(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
   do j = 1, nptc
     i = i1 + (j - 1)
-    c(j) = 0.
+    c(j) = 0._real64
     if ((i .lt. 1) .or. (i .gt. npts)) continue
     vj = v1c + dvc*real(j - 1)
-    c(j) = xo2inf3(i)/vj
+    c(j) = xo2inf3(i)/vj !unitless.
   enddo
   deallocate(xo2inf3)
 end subroutine o2inf3
@@ -279,44 +247,29 @@ subroutine o2_vis(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), dimension(:), intent(inout) :: c ![cm3].
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
-  integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
-  real(kind=real64) :: factor, vj, xlosmt
+  integer :: dimid, i, i1, i2, j, ncid, npts, varid
+  real(kind=real64) :: factor, vj
   real(kind=real64) :: v1s, v2s, dvs
   real(kind=real64), dimension(:), allocatable :: s
 
-!
-!        o2 continuum formulated by greenblatt et al. over the spectral
-!        region 8797-29870 cm-1:  "absorption coefficients of oxygen
-!        between 330 and 1140 nm, g.d. greenblatt, j.j. orlando, j.b.
-!        burkholder and a.r. ravishabkara,  j. geophys. res., 95,
-!        18577-18582, 1990.
-!
-!        the units conversion  is to (cm^2/molec)/atm(o2)
-!
-!      these are the conditions reported in the paper by greenblatt et
-!      al. for the spectrum of fig. 1.
-!
-!     conditions:  55 atm.; 296 k; 89.5 cm path
-!
   !Read data from netcdf file.
-  err = nf90_open(path, nf90_nowrite, ncid)
-  err = nf90_inq_varid(ncid, "o2_invis", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvs)
-  err = nf90_inq_dimid(ncid, "n13", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=npts)
+  call nc_check(nf90_open(path, nf90_nowrite, ncid))
+  call nc_check(nf90_inq_varid(ncid, "o2_invis", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvs))
+  call nc_check(nf90_inq_dimid(ncid, "n13", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=npts))
   allocate(s(npts))
-  err = nf90_get_var(ncid, varid, s)
-  err = nf90_close(ncid)
+  call nc_check(nf90_get_var(ncid, varid, s))
+  call nc_check(nf90_close(ncid))
 
-  xlosmt = 2.68675e+19
-  factor = 1./((xlosmt*1.e-20*(55.*273./296.)**2)*89.5)
+  factor = 1./((loschmidt*1.e-20*(55.*273./296.)**2)*89.5) ![cm3].
 
   dvc = dvs
   v1ss = v1s
@@ -328,12 +281,12 @@ subroutine o2_vis(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
-  nptc = i2 - i1+3
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
+  nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
@@ -342,7 +295,7 @@ subroutine o2_vis(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
     c(j) = 0.
     if ((i .lt. 1) .or. (i .gt. npts)) continue
     vj = v1c + dvc*real(j - 1)
-    c(j) = factor*s(i)/vj
+    c(j) = factor*s(i)/vj ![cm3].
   enddo
   deallocate(s)
 end subroutine o2_vis
@@ -352,7 +305,7 @@ subroutine o2herz(v1c, v2c, dvc, nptc, c, t, p, v1ss, v2ss, v1abs, v2abs)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), dimension(:), intent(inout) :: c ![cm3].
   real(kind=real64), intent(in) :: t, p
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
@@ -360,11 +313,11 @@ subroutine o2herz(v1c, v2c, dvc, nptc, c, t, p, v1ss, v2ss, v1abs, v2abs)
   integer :: i, i1, i2, j
   real(kind=real64) :: dvs, herz, vj, v1s
 
-  v1s = 36000.
+  v1s = 36000._real64
   v1ss = v1s
-  v2ss = 99999.
+  v2ss = 99999._real64
 
-  dvs = 10.
+  dvs = 10._real64
   dvc = dvs
 
   v1c = v1abs - dvc
@@ -373,25 +326,22 @@ subroutine o2herz(v1c, v2c, dvc, nptc, c, t, p, v1ss, v2ss, v1abs, v2abs)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
-!         IF (NPTC.GT.NPTS) NPTC=NPTS+4
-!        mja, 10-27-2011 - this seems to be redundant as the
-!        Herzberg O2 continuum is a function, not block data
   v2c = v1c + dvs*real(nptc - 1)
 
   do j = 1, nptc
     i = i1 + (j - 1)
-    c(j) = 0.
+    c(j) = 0._real64
     if (i .lt. 1) continue
     vj = v1c + dvc*real(j - 1)
     call hertda(herz, vj)
     call herprs(herz, t, p)
-    c(j) = herz/vj
+    c(j) = herz/vj ![cm3].
   enddo
 end subroutine o2herz
 
@@ -402,47 +352,13 @@ subroutine hertda(herz, v)
   real(kind=real64), intent(in) :: v
 
   real(kind=real64) :: corr, yratio
-!
-!     HERZBERG O2 ABSORPTION
-!     HALL,1987 PRIVATE COMMUNICATION, BASED ON:
-!
-!     REF. JOHNSTON, ET AL., JGR,89,11661-11665,1984
-!          NICOLET, 1987 (RECENT STUDIES IN ATOMIC
-!                         & MOLECULAR PROCESSES,
-!                         PLENUM PUBLISHING CORP, NY 1987)
-!
-!     AND YOSHINO, ET AL., 1988 (PREPRINT OF "IMPROVED ABSORPTION
-!          CROSS SECTIONS OF OXYGEN IN THE WAVELENGTH REGION 205-240NM
-!          OF THE HERZBERG CONTINUUM")
-!
-!     **** NOTE:  CROSS SECTION AT 0 PRESSURE  ***
-!     THE PRESSURE DEPENDENT TERM IS IN SUBROUTINE HERPRS
-!
-!C    COMMON /CNSTNS/ PI,CA,DEG,GCAIR,BIGNUM,BIGEXP
-!
-  herz = 0.0
-  if (v .le. 36000.00) return
-!
-!     EXTRAPOLATE SMOOTHLY THROUGH THE HERZBERG BAND REGION
-!     NOTE: HERZBERG BANDS ARE NOT CORRECTLY INCLUDED
-!
-  corr = 0.
-!      IF (V.LE.40000.) CORR = ((40000.-V)/4000.)*7.917E-27
-!     factor of 1.e-20 removed; put in front factor
-  if (v .le. 40000.) corr = ((40000. - v)/4000.)*7.917e-07
-!
-!     UNITS ARE (CM2)
-!
-!     HALL'S NEW HERZBERG  (LEAST SQRS FIT, LN(P))
-!
-!     YRATIO=2048.7/WL(I)  ****IN ANGSTOMS****
-!           =.20487/WN(I)     IN MICRONS
-!           =WCM(I)/48811.0   IN CM-1
-!
-  yratio = v/48811.0
-!     HERZ = 6.884E-24*(YRATIO)*EXP(-69.738*( LOG(YRATIO))**2)-CORR
-!     factor of 1.e-20 removed; put in front factor
-  herz = 6.884e-04*(yratio)*exp(-69.738*(log(yratio))**2) - corr
+
+  herz = 0._real64
+  if (v .le. 36000._real64) return
+  corr = 0._real64
+  if (v .le. 40000._real64) corr = ((40000._real64 - v)/4000._real64)*7.917e-7_real64
+  yratio = v/48811._real64
+  herz = 6.884e-4_real64*(yratio)*exp(-69.738_real64*(log(yratio))**2) - corr
 end subroutine hertda
 
 
@@ -450,37 +366,8 @@ subroutine herprs(herz, t, p)
 
   real(kind=real64), intent(inout) :: herz
   real(kind=real64), intent(in) :: t, p
-!
-!     CORRECT THE HERZBERG CONTINUUM CROSS SECTION FOR PRESSURE
-!     DEPENDENCE; BASED ON SHARDANAND, JQRST, 18, 525-530, 1977.
-!                 FOR UN2| BROADENING
-!                 AND YOSHINO ET AL 1988 FOR UO2| BROADENING
-!
-!     PO2= PARTIAL PRESSURE OF O2
-!     PN2= PARTIAL PRESSURE OF N2; BN2=.45*BO2
-!
-!     DATA BO2 / 1.72E-3 /
-!
-!     Changed in Herzberg continuum pressure,
-!     Reference:
-!     "Atmospheric Propagation in the UV, Visible, IR and MM-wave
-!     Region and Related Systems Aspects".
-!     G.P. Anderson,F.X. Kneizys, E.P. Shettle, L.W. Abreu,
-!     J.H. Chetwynd, R.E. Huffman, and L.A. Hall; Conference
-!     Proceedings No. 454 of the Advisory Group for Aerospace
-!     Research & Development; 1990.
-!     NOTE:  THE HERZBERG CONTINUUM OBEYS BEER'S LAW
-!            OPTICAL DEPTH(TOTAL)=SUM OVER LAYER O.D.(I)
-!
-!     BO2= RATIO OF SIGMA(O2-O2)/(SIGMA(O2)) * 760(TORR)*.2095
-!     BN2=.45*BO2= RATIO OF SIGMA(O2-N2)/(SIGMA(O2)) * 760(TORR)*.78
-!
-!     BO2*760*(.2095+.45*.78) = .73 , AS BELOW
-!
-!     Changed Herzberg continuum pressure (see above reference)
-!
-!     BO2*760*(.2095+.45*.78) = .83 , AS BELOW
-  herz = herz*(1.+.83*(p/1013.)*(273.16/t))
+
+  herz = herz*(1._real64 + 0.83_real64*(p/p0)*(273.16_real64/t))
 end subroutine herprs
 
 
@@ -489,26 +376,26 @@ subroutine o2fuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c
+  real(kind=real64), dimension(:), intent(inout) :: c ![cm3].
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
-  integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
+  integer :: dimid, i, i1, i2, j, ncid, npts, varid
   real(kind=real64) :: dvs, vj, v1s, v2s
   real(kind=real64), dimension(:), allocatable  :: s
 
   !Read data from netcdf file.
-  err = nf90_open(path, nf90_nowrite, ncid)
-  err = nf90_inq_varid(ncid, "o2_infuv", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvs)
-  err = nf90_inq_dimid(ncid, "n14", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=npts)
+  call nc_check(nf90_open(path, nf90_nowrite, ncid))
+  call nc_check(nf90_inq_varid(ncid, "o2_infuv", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvs))
+  call nc_check(nf90_inq_dimid(ncid, "n14", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=npts))
   allocate(s(npts))
-  err = nf90_get_var(ncid, varid, s)
-  err = nf90_close(ncid)
+  call nc_check(nf90_get_var(ncid, varid, s))
+  call nc_check(nf90_close(ncid))
 
   dvc = dvs
   v1ss = v1s
@@ -520,11 +407,10 @@ subroutine o2fuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 1.e-5
+    i1 = int((v1c - v1s)/dvs + 1.e-5_real64)
   endif
   v1c = v1s + dvs*real(i1 - 1)
-
-  i2 = (v2c - v1s)/dvs + 1.e-5
+  i2 = int((v2c - v1s)/dvs + 1.e-5_real64)
 
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
@@ -535,10 +421,229 @@ subroutine o2fuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
     c(j) = 0.
     if ((i .lt. 1) .or. (i .gt. npts)) continue
     vj = v1c + dvc*real(j - 1)
-    c(j) = s(i)/vj
+    c(j) = s(i)/vj ![cm3].
   enddo
   deallocate(s)
 end subroutine o2fuv
+
+
+subroutine oxygen_fundamental_continuum(n_absrb, jrad, wk, grid, tave, pave, path, absrb)
+
+  integer, intent(in) :: n_absrb, jrad
+  real(kind=real64), intent(in) :: wk !< Oxygen number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  character(len=*), intent(in) :: path !< Path to dataset.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(6000) :: c
+  real(kind=real64), dimension(n_absrb) :: c0
+
+  if (grid%xn .gt. 1340._real64 .and. grid%x0 .lt. 1850._real64) then
+    c0(:) = 0._real64 ![cm3].
+    tau_fac = wk*1.e-20_real64*(pave/p0)*(t_273/tave) ![cm-3].
+    call o2_ver_1(v1c, v2c, dvc, nptc, c0, tave, v1ss, v2ss, grid%x0, grid%xn, path)
+    do j = 1, nptc
+      vj = v1c + dvc*real(j - 1) ![cm-1].
+      c(j) = tau_fac*c0(j) !unitless.
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine oxygen_fundamental_continuum
+
+
+subroutine oxygen_nir1_continuum(n_absrb, jrad, wk, grid, &
+                                 tave, pave, x_vmr_o2, x_vmr_n2, x_vmr_h2o, &
+                                 path, absrb)
+
+  integer, intent(in) :: n_absrb, jrad
+  real(kind=real64), intent(in) :: wk !< Oxygen number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  real(kind=real64), intent(in) :: x_vmr_o2, x_vmr_n2, x_vmr_h2o
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  character(len=*), intent(in) :: path !< Path to dataset.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: a_o2, a_n2, a_h2o, tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(n_absrb) :: c0
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. 7536._real64 .and. grid%x0 .lt. 8500._real64) then
+    c0(:) = 0._real64 !unitless.
+    a_o2  = 1._real64/0.446_real64
+    a_n2  = 0.3_real64/0.446_real64
+    a_h2o = 1._real64
+    tau_fac = (wk/loschmidt)*(pave/p0)*(t_273/tave)* &
+              (a_o2*x_vmr_o2 + a_n2*x_vmr_n2 + a_h2o*x_vmr_h2o) !unitless
+    call o2inf1(v1c, v2c, dvc, nptc, c0, v1ss, v2ss, grid%x0, grid%xn, path)
+    do j = 1, nptc
+      c(j) = tau_fac*c0(j) !unitless.
+      vj = v1c + dvc*real(j - 1) ![cm-1].
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine oxygen_nir1_continuum
+
+
+subroutine oxygen_nir2_continuum(n_absrb, jrad, wk, wtot, grid, tave, pave, absrb)
+
+  integer, intent(in) :: n_absrb, jrad
+  real(kind=real64), intent(in) :: wk !< Oxygen number density [cm-3].
+  real(kind=real64), intent(in) :: wtot !< Total air number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperture [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: v1c, v2c, dvc, v1ss, v2ss, wo2, adjwo2, vj
+  real(kind=real64), dimension(n_absrb) :: c0
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. 9100._real64 .and. grid%x0 .lt. 11000._real64) then
+    c0(:) = 0._real64 ![cm3].
+    call o2inf2(v1c, v2c, dvc, nptc, c0, v1ss, v2ss, grid%x0, grid%xn)
+    wo2 = wk*1.e-20_real64*(pave/p0)*(t0/tave) ![cm-3].
+    adjwo2 = (wk/wtot)*(1._real64/0.209_real64)*wo2 ![cm-3].
+    do j = 1, nptc
+      c(j) = c0(j)*adjwo2 !unitless.
+      vj = v1c + dvc*real(j - 1) ![cm-1].
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine oxygen_nir2_continuum
+
+
+subroutine oxygen_nir3_continuum(n_absrb, jrad, wk, grid, tave, pave, path, absrb)
+
+  integer, intent(in) :: n_absrb, jrad
+  real(kind=real64), intent(in) :: wk !< Oxygen number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  character(len=*), intent(in) :: path !< Path to dataset.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(n_absrb) :: c0
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. 12961.5_real64 .and. grid%x0 .lt. 13221.5_real64) then
+    c0(:) = 0._real64 !unitless.
+    tau_fac = (wk/loschmidt)*(pave/p0)*(t_273/tave) !unitless
+    call o2inf3(v1c, v2c, dvc, nptc, c0, v1ss, v2ss, grid%x0, grid%xn, path)
+    do j = 1, nptc
+      c(j) = tau_fac*c0(j) !unitless.
+      vj = v1c + dvc*real(j - 1) ![cm-1].
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine oxygen_nir3_continuum
+
+
+subroutine oxygen_visible_continuum(n_absrb, jrad, wk, wtot, grid, tave, pave, path, absrb)
+
+  integer, intent(in) :: n_absrb, jrad
+  real(kind=real64), intent(in) :: wk !< Oxygen number density [cm-3].
+  real(kind=real64), intent(in) :: wtot !< Total air number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  character(len=*), intent(in) :: path !< Path to dataset.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: wo2, chio2, adjwo2, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(n_absrb) :: c0
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. 15000._real64 .and. grid%x0 .lt. 29870._real64) then
+    c0(:) = 0._real64 ![cm3].
+    wo2 = wk*1.e-20_real64*(pave/p0)*(t_273/tave) ![cm-3].
+    chio2 = wk/wtot !unitless.
+    adjwo2 = chio2*wo2 ![cm-3].
+    call o2_vis(v1c, v2c, dvc, nptc, c0, v1ss, v2ss, grid%x0, grid%xn, path)
+    do j = 1, nptc
+      c(j) = c0(j)*adjwo2 !unitless.
+      vj = v1c + dvc*real(j - 1) ![cm-1].
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine oxygen_visible_continuum
+
+
+subroutine oxygen_herzberg_continuum(n_absrb, jrad, wk, grid, tave, pave, absrb)
+
+  integer, intent(in) :: n_absrb, jrad
+  real(kind=real64), intent(in) :: wk !< Oxygen number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: wo2, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(n_absrb) :: c0
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. 36000._real64) then
+    c0(:) = 0._real64 ![cm3].
+    wo2 = wk*1.e-20_real64 ![cm-3].
+    call o2herz(v1c, v2c, dvc, nptc, c0, tave, pave, v1ss, v2ss, grid%x0, grid%xn)
+    do j = 1, nptc
+      c(j) = c0(j)*wo2 !unitless.
+      vj = v1c + dvc*real(j - 1)
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine oxygen_herzberg_continuum
+
+
+subroutine oxygen_uv_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
+
+  integer, intent(in) :: n_absrb, jrad
+  real(kind=real64), intent(in) :: wk !< Oxygen number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  character(len=*), intent(in) :: path !< Path to dataset.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: wo2, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(n_absrb) :: c0
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. 56740._real64) then
+    c0(:) = 0._real64 ![cm3].
+    wo2 = wk*1.e-20_real64 ![cm-3].
+    call o2fuv(v1c, v2c, dvc, nptc, c0, v1ss, v2ss, grid%x0, grid%xn, path)
+    do j = 1, nptc
+      vj = v1c + dvc*real(j - 1)
+      c(j) = c0(j)*wo2 !unitless.
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine oxygen_uv_continuum
 
 
 end module o2_continuum

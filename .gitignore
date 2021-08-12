@@ -23,6 +23,7 @@ test-suite.log
 tests/*.log
 tests/*.trs
 *.mod
+*__genmod.f90
 continuum
 tests/CNTNM.OPTDPT
 tests/WATER.COEF

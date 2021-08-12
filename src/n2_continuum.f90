@@ -1,10 +1,11 @@
 module n2_continuum
 use, intrinsic :: iso_fortran_env, only: real64
 use netcdf
+use utils
 implicit none
 
 
-public :: xn2_r, n2_ver_1, n2_overtone1
+public :: nitrogen_continuum, nitrogen_fundamental_continuum, nitrogen_overtone_continuum
 
 
 contains
@@ -20,59 +21,40 @@ subroutine xn2_r(v1c, v2c, dvc, nptc, c, fo2, tave, v1ss, v2ss, v1abs, v2abs, pa
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
-  integer :: dimid, err, i, i1, i2, j, ncid, nptb, npts, varid
+  integer :: dimid, i, i1, i2, j, ncid, nptb, npts, varid
   real(kind=real64) :: dvb, dvs, sf_t, tfac, v1b, v2b, v1s, v2s, xn2, xo2
   real(kind=real64), dimension(:), allocatable :: c_220, c_296, sf_220, sf_296
 
-!
-!     Model used:
-!      Borysow, A, and L. Frommhold, "Collision-induced
-!         rototranslational absorption spectra of N2-N2
-!         pairs for temperatures from 50 to 300 K", The
-!         Astrophysical Journal, 311, 1043-1057, 1986.
-!
-!     Updated 2004/09/22 based on:
-!
-!      Boissoles, J., C. Boulet, R.H. Tipping, A. Brown and Q. Ma,
-!         Theoretical CAlculations of the Translation-Rotation
-!         Collision-Induced Absorption in N2-N2, O2-O2 and N2-O2 Pairs,
-!         J.Quant. Spec. Rad. Transfer, 82,505 (2003).
-!
-!     The scale factors are reported to account for the efect of o2-o2
-!     and n2-o2 collision induced effects.
-!     The values for scale factor values (sf296) for 296K are based on
-!     linear interpolation of Boissoles at al. values at 250K and 300K
-
   !Read data from netcdf file.
-  err = nf90_open(path, nf90_nowrite, ncid)
-  err = nf90_inq_varid(ncid, "ct_296", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvs)
-  err = nf90_inq_dimid(ncid, "n4", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=npts)
+  call nc_check(nf90_open(path, nf90_nowrite, ncid))
+  call nc_check(nf90_inq_varid(ncid, "ct_296", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvs))
+  call nc_check(nf90_inq_dimid(ncid, "n4", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=npts))
   allocate(c_296(npts))
-  err = nf90_get_var(ncid, varid, c_296)
-  err = nf90_inq_varid(ncid, "sf_296", varid)
+  call nc_check(nf90_get_var(ncid, varid, c_296))
+  call nc_check(nf90_inq_varid(ncid, "sf_296", varid))
   allocate(sf_296(npts))
-  err = nf90_get_var(ncid, varid, sf_296)
-  err = nf90_inq_varid(ncid, "ct_220", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1b)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2b)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvb)
-  err = nf90_inq_dimid(ncid, "n4", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=nptb)
+  call nc_check(nf90_get_var(ncid, varid, sf_296))
+  call nc_check(nf90_inq_varid(ncid, "ct_220", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1b))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2b))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvb))
+  call nc_check(nf90_inq_dimid(ncid, "n4", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=nptb))
   allocate(c_220(npts))
-  err = nf90_get_var(ncid, varid, c_220)
-  err = nf90_inq_varid(ncid, "sf_220", varid)
+  call nc_check(nf90_get_var(ncid, varid, c_220))
+  call nc_check(nf90_inq_varid(ncid, "sf_220", varid))
   allocate(sf_220(npts))
-  err = nf90_get_var(ncid, varid, sf_220)
-  err = nf90_close(ncid)
+  call nc_check(nf90_get_var(ncid, varid, sf_220))
+  call nc_check(nf90_close(ncid))
 
-  xo2 = 0.21
-  xn2 = 0.79
+  xo2 = 0.21_real64
+  xn2 = 0.79_real64
 
-  tfac = (tave - 296.)/(220. - 296.)
+  tfac = (tave - 296._real64)/(220._real64 - 296._real64) !unitless.
 
   dvc = dvs
   v1ss = v1s
@@ -83,26 +65,22 @@ subroutine xn2_r(v1c, v2c, dvc, nptc, c, fo2, tave, v1ss, v2ss, v1abs, v2abs, pa
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
-!*******  absorption coefficient in units of cm-1 amagat-2
   do j = 1, nptc
     i = i1 + (j - 1)
-    c(j) = 0.
+    c(j) = 0._real64
     if ((i .lt. 1) .or. (i .gt. npts)) continue
-    c(j) = c_296(i)*((c_220(i)/c_296(i))**tfac)
-    sf_t = sf_296(i)*((sf_220(i)/sf_296(i))**tfac)
-!        correct for incorporation of air mixing ratios in sf
-!        fo2 is now ~ the ratio of alpha(n2-o2)/alpha(n2-n2)
-!        eq's 7 and 8 in the boissoles paper.
-    fo2(j) = (sf_t - 1.)*(xn2)/(xo2)
+    c(j) = c_296(i)*((c_220(i)/c_296(i))**tfac) !unitless.
+    sf_t = sf_296(i)*((sf_220(i)/sf_296(i))**tfac) !unitless.
+    fo2(j) = (sf_t - 1._real64)*xn2/xo2 !unitless.
   enddo
   deallocate(c_220, c_296, sf_220, sf_296)
 end subroutine xn2_r
@@ -118,52 +96,31 @@ subroutine n2_ver_1(v1c, v2c, dvc, nptc, c, c1, c2, t, v1ss, v2ss, v1abs, v2abs,
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
-  integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
+  integer :: dimid, i, i1, i2, j, ncid, npts, varid
   real(kind=real64) :: a_o2, dvs, vj, v1s, v2s, xt_lin, xtfac
   real(kind=real64), dimension(:), allocatable :: xn2_272, xn2_228, a_h2o
 
   !Read data from netcdf file.
-  err = nf90_open(path, nf90_nowrite, ncid)
-  err = nf90_inq_varid(ncid, "xn2_272", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvs)
-  err = nf90_inq_dimid(ncid, "n5", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=npts)
+  call nc_check(nf90_open(path, nf90_nowrite, ncid))
+  call nc_check(nf90_inq_varid(ncid, "xn2_272", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvs))
+  call nc_check(nf90_inq_dimid(ncid, "n5", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=npts))
   allocate(xn2_272(npts), xn2_228(npts), a_h2o(npts))
-  err = nf90_get_var(ncid, varid, xn2_272)
-  err = nf90_inq_varid(ncid, "xn2_228", varid)
-  err = nf90_get_var(ncid, varid, xn2_228)
-  err = nf90_inq_varid(ncid, "a_h2o", varid)
-  err = nf90_get_var(ncid, varid, a_h2o)
-  err = nf90_close(ncid)
+  call nc_check(nf90_get_var(ncid, varid, xn2_272))
+  call nc_check(nf90_inq_varid(ncid, "xn2_228", varid))
+  call nc_check(nf90_get_var(ncid, varid, xn2_228))
+  call nc_check(nf90_inq_varid(ncid, "a_h2o", varid))
+  call nc_check(nf90_get_var(ncid, varid, a_h2o))
+  call nc_check(nf90_close(ncid))
 
-!     Nitrogen Collision Induced Fundamental
+  xtfac = ((1._real64/t) - (1._real64/272._real64))/((1._real64/228._real64) - &
+          (1._real64/272._real64)) !unitless.]
+  xt_lin = (t - 272._real64)/(228._real64 - 272._real64) !unitless.
+  a_o2  = 1.294_real64 - 0.4545_real64*t/296._real64 !unitless.
 
-!     Lafferty, W.J., A.M. Solodov,A. Weber, W.B. Olson and J._M.
-!        Hartmann, Infrared collision-induced absorption by N2 near 4.3
-!        microns for atmospheric applications: measurements and
-!         emprirical modeling, Appl. Optics, 35, 5911-5917, (1996).
-!
-!     mt_ckd_2.8: Coefficients for N2-H2O relative efficiency determined
-!     by Mlawer and Alvarado based primarily on measurements from
-!     Baranov and Lafferty (2012). These coefficients were derived
-!     simultaneously with water vapor foreign and self continuum
-!     coefficients from 1800-2600 cm-1 using IASI measurements as in
-!     Alvarado et al. (2012).
-!
-  xtfac = ((1./t) - (1./272.))/((1./228.) - (1./272.))
-  xt_lin = (t - 272.)/(228. - 272.)
-!
-!     a_o2  represents the relative broadening efficiency of o2
-  a_o2  = 1.294 - 0.4545*t/296.
-
-!     a_h2o represents the relative broadening efficiency of h2o.  It
-!     has spectral dependence and is stored on same grid as xn2.
-
-!     The absorption coefficients from the Lafferty et al. reference
-!     are for pure nitrogen (absorber and broadener)
-!
   dvc = dvs
   v1ss = v1s
   v2ss = v2s
@@ -173,33 +130,28 @@ subroutine n2_ver_1(v1c, v2c, dvc, nptc, c, c1, c2, t, v1ss, v2ss, v1abs, v2abs,
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
   do j = 1, nptc
     i = i1 + (j - 1)
-    c(j) = 0.
+    c(j) = 0._real64
     if ((i .lt. 1) .or. (i .gt. npts)) continue
     vj = v1c + dvc*real(j - 1)
-    if ((xn2_272(i) .gt. 0.) .and. (xn2_228(i) .gt. 0.)) then
-!           logarithmic interpolation in reciprical of temperature
+    if ((xn2_272(i) .gt. 0._real64) .and. (xn2_228(i) .gt. 0._real64)) then
        c(j) = xn2_272(i)*(xn2_228(i)/xn2_272(i))**xtfac
     else
-!           linear interpolation  (xn2_272 or xn2_228 = 0 to get here)
       c(j) = xn2_272(i) + (xn2_228(i) - xn2_272(i))*xt_lin
     endif
-!     the radiation field is removed with 1/vj
-    c(j) = c(j)/vj
-    c1(j) = a_o2*c(j)
-!     the factor 9/7 is a modification to a preliminary formulation
-!     of n2-h2o absorption.
-    c2(j) = (9./7.)*a_h2o(i)*c(j)
+    c(j) = c(j)/vj !unitless
+    c1(j) = a_o2*c(j) !unitless
+    c2(j) = (9._real64/7._real64)*a_h2o(i)*c(j) !unitless.
   enddo
   deallocate(xn2_272, xn2_228, a_h2o)
 end subroutine n2_ver_1
@@ -214,28 +166,21 @@ subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
-  integer :: dimid, err, i, i1, i2, j, ncid, npts, varid
+  integer :: dimid, i, i1, i2, j, ncid, npts, varid
   real(kind=real64) :: dvs, vj, v1s, v2s
   real(kind=real64), dimension(:), allocatable :: xn2
 
   !Read data from netcdf file.
-  err = nf90_open(path, nf90_nowrite, ncid)
-  err = nf90_inq_varid(ncid, "xn2", varid)
-  err = nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s)
-  err = nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s)
-  err = nf90_get_att(ncid, varid, "wavenumber_resolution", dvs)
-  err = nf90_inq_dimid(ncid, "n6", dimid)
-  err = nf90_inquire_dimension(ncid, dimid, len=npts)
+  call nc_check(nf90_open(path, nf90_nowrite, ncid))
+  call nc_check(nf90_inq_varid(ncid, "xn2", varid))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_lower_bound", v1s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_upper_bound", v2s))
+  call nc_check(nf90_get_att(ncid, varid, "wavenumber_resolution", dvs))
+  call nc_check(nf90_inq_dimid(ncid, "n6", dimid))
+  call nc_check(nf90_inquire_dimension(ncid, dimid, len=npts))
   allocate(xn2(npts))
-  err = nf90_get_var(ncid, varid, xn2)
-  err = nf90_close(ncid)
-
-!     nitrogen collision induced first overtone
-
-!     shapiro and gush (1966) modified by mlawer and gombos (2015).
-
-!     the absorption coefficients are for pure nitrogen (absorber and
-!     broadener.
+  call nc_check(nf90_get_var(ncid, varid, xn2))
+  call nc_check(nf90_close(ncid))
 
   dvc = dvs
   v1ss = v1s
@@ -246,11 +191,11 @@ subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
@@ -260,12 +205,115 @@ subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
     c(j) = 0.
     if ((i .lt. 1) .or. (i .gt. npts)) continue
     vj = v1c + dvc*real(j - 1)
-    c(j) = xn2(i)
-!     the radiation field is removed with 1/vj
-    c(j) = c(j)/vj
+    c(j) = xn2(i) ![cm-1].
+    c(j) = c(j)/vj !unitless
   enddo
   deallocate(xn2)
 end subroutine n2_overtone1
+
+
+subroutine nitrogen_continuum(n_absrb, jrad, wn2, grid, &
+                              tave, pave, x_vmr_n2, x_vmr_o2, x_vmr_h2o, path, absrb)
+
+  integer, intent(in) :: n_absrb, jrad
+  real(kind=real64), intent(in) :: wn2 !< Nitrogen number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  real(kind=real64), intent(in) :: x_vmr_n2, x_vmr_o2, x_vmr_h2o
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  character(len=*), intent(in) :: path !< Path to dataset.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: a_h2o, tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(n_absrb) :: c0, c1
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. -10._real64 .and. grid%x0 .lt. 350._real64) then
+    c0(:) = 0._real64 !unitless.
+    c1(:) = 0._real64 !unitless.
+    a_h2o = 1._real64 !unitless.
+    tau_fac = (wn2/loschmidt)*(pave/p0)*(t_273/tave) !unitless.
+    call xn2_r(v1c, v2c, dvc, nptc, c0, c1, tave, v1ss, v2ss, grid%x0, grid%xn, path)
+    do j = 1, nptc
+      vj = v1c + dvc*real(j - 1) ![cm-1].
+      c(j) = tau_fac*c0(j)*(x_vmr_n2 + c1(j)*x_vmr_o2 + a_h2o*x_vmr_h2o) !unitless.
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine nitrogen_continuum
+
+
+subroutine nitrogen_fundamental_continuum(jrad, wn2, grid, &
+                                          tave, pave, x_vmr_n2, x_vmr_o2, x_vmr_h2o, &
+                                          path, absrb)
+
+  integer, intent(in) :: jrad
+  real(kind=real64), intent(in) :: wn2 !< Nitrogen number density [cm-3].
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  real(kind=real64), intent(in) :: x_vmr_n2, x_vmr_o2, x_vmr_h2o
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  character(len=*), intent(in) :: path !< Path to dataset.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(5150) :: cn0, cn1, cn2 ![cm3 amg-1].
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. 2001.77_real64 .and. grid%x0 .lt. 2897.59_real64) then
+    cn0(:) = 0._real64 !unitless.
+    cn1(:) = 0._real64 !unitless.
+    cn2(:) = 0._real64 !unitless.
+    tau_fac = (wn2/loschmidt)*(pave/p0)*(t_273/tave) !unitless.
+    call n2_ver_1(v1c, v2c, dvc, nptc, cn0, cn1, cn2, tave, v1ss, v2ss, grid%x0, grid%xn, path)
+    do j = 1, nptc
+      vj = v1c + dvc*real(j - 1) ![cm-1].
+      c(j) = tau_fac*(x_vmr_n2*cn0(j) + x_vmr_o2*cn1(j) + x_vmr_h2o*cn2(j)) !unitless.
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine nitrogen_fundamental_continuum
+
+
+subroutine nitrogen_overtone_continuum(n_absrb, jrad, wn2, grid, &
+                                       tave, pave, x_vmr_n2, x_vmr_o2, x_vmr_h2o, &
+                                       path, absrb)
+
+  integer, intent(in):: n_absrb, jrad
+  real(kind=real64), intent(in) :: wn2 !< Nitrogen number density [cm-3].
+  type(SpectralGrid), intent(in) :: grid !< Spectral grid.
+  real(kind=real64), intent(in) :: tave !< Temperature [K].
+  real(kind=real64), intent(in) :: pave !< Pressure [mb].
+  real(kind=real64), intent(in) :: x_vmr_n2 !< N2 volume mixing ratio [mol mol-1].
+  real(kind=real64), intent(in) :: x_vmr_o2 !< O2 volume mixing ratio [mol mol-1].
+  real(kind=real64), intent(in) :: x_vmr_h2o !< H2O volume mixing ratio [mol mol-1].
+  character(len=*), intent(in) :: path !< Path to the input dataset.
+  real(kind=real64), dimension(:), intent(inout) :: absrb !< Extinction [cm-1].
+
+  integer :: nptc, j, ist, last
+  real(kind=real64) :: tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
+  real(kind=real64), dimension(n_absrb) :: c0
+  real(kind=real64), dimension(6000) :: c
+
+  if (grid%xn .gt. 4340._real64 .and. grid%x0 .lt. 4910._real64) then
+    c0(:) = 0._real64 !unitless.
+    tau_fac = (wn2/loschmidt)*(pave/p0)*(t_273/tave)*(x_vmr_n2 + x_vmr_o2 + x_vmr_h2o) !unitless.
+    call n2_overtone1(v1c, v2c, dvc, nptc, c0, v1ss, v2ss, grid%x0, grid%xn, path)
+    do j = 1, nptc
+      vj = v1c + dvc*real(j - 1) !unitless.
+      c(j) = tau_fac*c0(j) !unitless.
+      if (jrad .eq. 1) c(j) = c(j)*radfn(vj, tave/radcn2) ![cm-1].
+    enddo
+    call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
+    call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+  endif
+end subroutine nitrogen_overtone_continuum
 
 
 end module n2_continuum
