@@ -65,3 +65,18 @@ be updated accordingly.
 
 For other runs of the continuum standalone program, the user can edit `INPUT.example` in the
 `tests` directory.
+
+# Python version
+A work-in-progess python version is begin attempted.  To install the python package, run the
+following in the base of the repository.
+
+```bash
+$ pip install --upgrade pip
+$ pip install .
+```
+
+A simple example is provided in the `tests` directory.  Simply run:
+
+```bash
+$ python3 tests/test_mt_ckd.py
+```

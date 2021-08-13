@@ -27,3 +27,4 @@ tests/*.trs
 continuum
 tests/CNTNM.OPTDPT
 tests/WATER.COEF
+*.pyc
