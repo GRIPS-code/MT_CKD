@@ -67,7 +67,7 @@ For other runs of the continuum standalone program, the user can edit `INPUT.exa
 `tests` directory.
 
 # Python version
-A work-in-progess python version is begin attempted.  To install the python package, run the
+A work-in-progess python version is being attempted.  To install the python package, run the
 following in the base of the repository.
 
 ```bash
