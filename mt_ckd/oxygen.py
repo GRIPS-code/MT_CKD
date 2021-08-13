@@ -88,7 +88,7 @@ class OxygenVisibleContinuum(Continuum):
         adjwo2 = (no2/n)*no2*1.e-20*(pressure/P0)*(T273/temperature) #[cm-3].
         rad = radiation_term(self.grid()[:], temperature) #[cm-1].
         factor = 1./(LOSCHMIDT*1.e-20*(55.*T273/T0)*(55.*T273/T0)*89.5) #[cm3].
-        return adjwo2*rad[:]*factor*rad*self.data.data[:]/self.grid()[:]
+        return adjwo2*rad[:]*factor*self.data.data[:]/self.grid()[:]
 
     def grid(self):
         return self.data.wavenumbers()
