@@ -1,4 +1,4 @@
-from numpy import power, where
+from numpy import power, zeros
 
 from .utils import Continuum, dry_air_number_density, LOSCHMIDT, P0, radiation_term, \
                    Spectrum, T0, T273
@@ -36,11 +36,10 @@ class NitrogenCIAFundamentalContinuum(Continuum):
         rad = radiation_term(self.grid()[:], temperature)
 
         xtfac = (1./temperature - 1./272.)/(1./228. - 1./272.)
-        xtlin = (temperature - 272.)/(228. - 272.)
         ao2 = 1.294 - 0.4545*temperature/T0
-        c0 = where(self.data[0].data > 0.,
-                   self.data[0].data*power(self.data[1].data/self.data[0].data, xtfac),
-                   self.data[0].data + (self.data[1].data - self.data[0].data)*xtlin)
+        c0 = zeros(self.data[0].data.size)
+        c0[1: -1] = self.data[0].data[1: -1]*power(self.data[1].data[1: -1]/
+                                                   self.data[0].data[1: -1], xtfac)
         c0 = c0[:]/self.grid()[:]
         c1 = ao2*c0[:]
         c2 = (9./7.)*self.data[2].data[:]*c0[:]

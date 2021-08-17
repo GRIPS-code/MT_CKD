@@ -2,7 +2,7 @@ from os.path import dirname, join, realpath
 
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
-from numpy import arange, interp, zeros
+from numpy import arange, interp, seterr, zeros
 
 from mt_ckd import CarbonDioxideContinuum, \
                    NitrogenCIAPureRotationContinuum, NitrogenCIAFundamentalContinuum, \
@@ -15,10 +15,12 @@ from mt_ckd import CarbonDioxideContinuum, \
 
 
 if __name__ == "__main__":
+    seterr(all="raise")
+
     #User inputs.
     scriptdir = dirname(realpath(__file__))
     path = join(scriptdir, "../mt_ckd/mt-ckd.nc")
-    temperature = 296. # [K].
+    temperature = 260. # [K].
     pressure = 1013. # [mb].
     volume_mixing_ratio = {"Ar": 0.009,
                            "CO2": 345.e-6,
@@ -45,8 +47,8 @@ if __name__ == "__main__":
                 "O3_uv": OzoneUVContinuum,
                 "H2O_f": WaterVaporForeignContinuum,
                 "H2O_s": WaterVaporSelfContinuum}
-    test_results = {"H2O_s": "h2o-self", "H2O_f": "h2o-foreign", "CO2": "co2",
-                    "O3": "o3", "O2": "o2", "N2": "n2"}
+    test_results = {"N2": "n2", "H2O_s": "h2o-self", "H2O_f": "h2o-foreign", "CO2": "co2",
+                    "O3": "o3", "O2": "o2"}
 
     for key, value in test_results.items():
         with Dataset(join(scriptdir, "{}.nc".format(value)), "r") as dataset:
