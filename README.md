@@ -42,40 +42,41 @@ Though not necessary, the move to `cntnm` is for consistency with previous relea
 
 # Building
 
-To build the continuum model:
+Building this model requires autotools and a fortran compiler.  To build, run:
 
 ```
-cd MT_CKD/build
-make -f make_cntnm $TARGET
+autoreconf --install
+./configure
+make
 ```
-
-The `TARGET` environment variable depends on the user's operating system, compiler, and desired precision. Available targets are:
-
-| Target | Description | Compiler |
-| :--- | :--- | :--- |
-| `aixIBMsgl` | IBM/AIX OS using IBM fortran,single precision| `xlf90` |
-| `linuxPGIsgl` | Linux OS using PGI fortran,single precision |  `pgf90` |
-| `linuxGNUsgl` | Linux OS using GNU fortran,single precision | `gfortran` |
-| `linuxG95sgl` | Linux OS using G95 fortran,single precision | `g95` |
-| `inuxINTELsgl` | Linux OS using Intel fortran,single precision | `ifort` |
-| `mingwGNUsgl` | Windows unix shell environment using gfortran,single precision | `gfortran` |
-| `osxABSOFTsgl` | Mac OS_X using Absoft Pro fortran,singleprecision | `f90` |
-| `osxGNUsgl` | Mac OS_X using GNU fortran,singleprecision | `gfortran` |
-| `osxIBMsgl` | Mac OS_X using IBM XL fortran,singleprecision | `xlf90` |
-| `osxINTELsgl` | Mac OS_X using Intel fortran,single precision | `ifort` |
-| `sunSUNsgl` | Sun/Solaris OS using Sun fortran,single precision | `sunf90` |
-| `sgiMIPSsgl` | SGI/IRIX64 OS using MIPS fortran,single precision | `f90` |
 
 # Run Example
 
-To run MT_CKD as a standalone program instead of in LBLRTM:
+To run MT_CKD as a standalone program:
 
 ```
-cd run_example/
-ln -s ../cntnm_v3.5_linux_pgi_dbl cntnm # assuming v3.5 was built with PGI in double precision (linuxPGIdbl)
-./cntnm (0, enter)
+make check
 ```
 
-Push 0, then enter, and `CNTNM.OPTDPT` and `WATER.COEF` will be written to working directory. These can be compared with `CNTNM.OPTDPT_mt_ckd_AER` and `WATER.COEF_mt_ckd_AER`, which are included in version control and are considered the baseline calculations. They change with every release and will be updated accordingly.
+`CNTNM.OPTDPT` and `WATER.COEF` will be written to `tests` directory. These can be compared
+with `CNTNM.OPTDPT_mt_ckd_AER` and `WATER.COEF_mt_ckd_AER`, which are included in version
+control and are considered the baseline calculations. They change with every release and will
+be updated accordingly.
 
-For other runs of the continuum standalone program, the user can edit `INPUT.example` in the `run_example` directory.
+For other runs of the continuum standalone program, the user can edit `INPUT.example` in the
+`tests` directory.
+
+# Python version
+A work-in-progess python version is being attempted.  To install the python package, run the
+following in the base of the repository.
+
+```bash
+$ pip install --upgrade pip
+$ pip install .
+```
+
+A simple example is provided in the `tests` directory.  Simply run:
+
+```bash
+$ python3 tests/test_mt_ckd.py
+```
