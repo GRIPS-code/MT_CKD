@@ -27,7 +27,7 @@ $ make
 To run a simple test, try:
 
 ```bash
-make check
+$ make check
 ```
 
 This produces an output netCDF dataset `tests/out.nc` containing the continua.
