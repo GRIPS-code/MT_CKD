@@ -15,7 +15,7 @@ subroutine xn2_r(v1c, v2c, dvc, nptc, c, fo2, tave, v1ss, v2ss, v1abs, v2abs, pa
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c, fo2
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c, fo2
   real(kind=real64), intent(in) :: tave
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
@@ -74,6 +74,7 @@ subroutine xn2_r(v1c, v2c, dvc, nptc, c, fo2, tave, v1ss, v2ss, v1abs, v2abs, pa
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(fo2(nptc), c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0._real64
@@ -90,7 +91,7 @@ subroutine n2_ver_1(v1c, v2c, dvc, nptc, c, c1, c2, t, v1ss, v2ss, v1abs, v2abs,
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c, c1, c2
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c, c1, c2
   real(kind=real64), intent(in) :: t
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
@@ -139,13 +140,14 @@ subroutine n2_ver_1(v1c, v2c, dvc, nptc, c, c1, c2, t, v1ss, v2ss, v1abs, v2abs,
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(c(nptc), c1(nptc), c2(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0._real64
-    if ((i .lt. 1) .or. (i .gt. npts)) continue
+    if (i .lt. 1 .or. i .gt. npts) continue
     vj = v1c + dvc*real(j - 1)
     if ((xn2_272(i) .gt. 0._real64) .and. (xn2_228(i) .gt. 0._real64)) then
-       c(j) = xn2_272(i)*(xn2_228(i)/xn2_272(i))**xtfac
+      c(j) = xn2_272(i)*(xn2_228(i)/xn2_272(i))**xtfac
     else
       c(j) = xn2_272(i) + (xn2_228(i) - xn2_272(i))*xt_lin
     endif
@@ -161,7 +163,7 @@ subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc ![cm-1].
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c ![1.e20 cm3 amagat-1].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c ![1.e20 cm3 amagat-1].
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
@@ -200,6 +202,7 @@ subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -212,10 +215,10 @@ subroutine n2_overtone1(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 end subroutine n2_overtone1
 
 
-subroutine nitrogen_continuum(n_absrb, jrad, wn2, grid, &
+subroutine nitrogen_continuum(jrad, wn2, grid, &
                               tave, pave, x_vmr_n2, x_vmr_o2, x_vmr_h2o, path, absrb)
 
-  integer, intent(in) :: n_absrb, jrad
+  integer, intent(in) :: jrad
   real(kind=real64), intent(in) :: wn2 !< Nitrogen number density [cm-3].
   real(kind=real64), intent(in) :: tave !< Temperature [K].
   real(kind=real64), intent(in) :: pave !< Pressure [mb].
@@ -226,15 +229,13 @@ subroutine nitrogen_continuum(n_absrb, jrad, wn2, grid, &
 
   integer :: nptc, j, ist, last
   real(kind=real64) :: a_h2o, tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
-  real(kind=real64), dimension(n_absrb) :: c0, c1
-  real(kind=real64), dimension(6000) :: c
+  real(kind=real64), dimension(:), allocatable :: c, c0, c1
 
   if (grid%xn .gt. -10._real64 .and. grid%x0 .lt. 350._real64) then
-    c0(:) = 0._real64 !unitless.
-    c1(:) = 0._real64 !unitless.
     a_h2o = 1._real64 !unitless.
     tau_fac = (wn2/loschmidt)*(pave/p0)*(t_273/tave) !unitless.
     call xn2_r(v1c, v2c, dvc, nptc, c0, c1, tave, v1ss, v2ss, grid%x0, grid%xn, path)
+    allocate(c(nptc))
     do j = 1, nptc
       vj = v1c + dvc*real(j - 1) ![cm-1].
       c(j) = tau_fac*c0(j)*(x_vmr_n2 + c1(j)*x_vmr_o2 + a_h2o*x_vmr_h2o) !unitless.
@@ -242,6 +243,7 @@ subroutine nitrogen_continuum(n_absrb, jrad, wn2, grid, &
     enddo
     call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
     call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+    deallocate(c, c0, c1)
   endif
 end subroutine nitrogen_continuum
 
@@ -261,15 +263,12 @@ subroutine nitrogen_fundamental_continuum(jrad, wn2, grid, &
 
   integer :: nptc, j, ist, last
   real(kind=real64) :: tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
-  real(kind=real64), dimension(5150) :: cn0, cn1, cn2 ![cm3 amg-1].
-  real(kind=real64), dimension(6000) :: c
+  real(kind=real64), dimension(:), allocatable :: c, cn0, cn1, cn2 ![cm3 amg-1].
 
   if (grid%xn .gt. 2001.77_real64 .and. grid%x0 .lt. 2897.59_real64) then
-    cn0(:) = 0._real64 !unitless.
-    cn1(:) = 0._real64 !unitless.
-    cn2(:) = 0._real64 !unitless.
     tau_fac = (wn2/loschmidt)*(pave/p0)*(t_273/tave) !unitless.
     call n2_ver_1(v1c, v2c, dvc, nptc, cn0, cn1, cn2, tave, v1ss, v2ss, grid%x0, grid%xn, path)
+    allocate(c(nptc))
     do j = 1, nptc
       vj = v1c + dvc*real(j - 1) ![cm-1].
       c(j) = tau_fac*(x_vmr_n2*cn0(j) + x_vmr_o2*cn1(j) + x_vmr_h2o*cn2(j)) !unitless.
@@ -277,15 +276,16 @@ subroutine nitrogen_fundamental_continuum(jrad, wn2, grid, &
     enddo
     call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
     call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+    deallocate(c, cn0, cn1, cn2)
   endif
 end subroutine nitrogen_fundamental_continuum
 
 
-subroutine nitrogen_overtone_continuum(n_absrb, jrad, wn2, grid, &
+subroutine nitrogen_overtone_continuum(jrad, wn2, grid, &
                                        tave, pave, x_vmr_n2, x_vmr_o2, x_vmr_h2o, &
                                        path, absrb)
 
-  integer, intent(in):: n_absrb, jrad
+  integer, intent(in):: jrad
   real(kind=real64), intent(in) :: wn2 !< Nitrogen number density [cm-3].
   type(SpectralGrid), intent(in) :: grid !< Spectral grid.
   real(kind=real64), intent(in) :: tave !< Temperature [K].
@@ -298,13 +298,12 @@ subroutine nitrogen_overtone_continuum(n_absrb, jrad, wn2, grid, &
 
   integer :: nptc, j, ist, last
   real(kind=real64) :: tau_fac, v1c, v2c, dvc, v1ss, v2ss, vj
-  real(kind=real64), dimension(n_absrb) :: c0
-  real(kind=real64), dimension(6000) :: c
+  real(kind=real64), dimension(:), allocatable :: c, c0
 
   if (grid%xn .gt. 4340._real64 .and. grid%x0 .lt. 4910._real64) then
-    c0(:) = 0._real64 !unitless.
     tau_fac = (wn2/loschmidt)*(pave/p0)*(t_273/tave)*(x_vmr_n2 + x_vmr_o2 + x_vmr_h2o) !unitless.
     call n2_overtone1(v1c, v2c, dvc, nptc, c0, v1ss, v2ss, grid%x0, grid%xn, path)
+    allocate(c(nptc))
     do j = 1, nptc
       vj = v1c + dvc*real(j - 1) !unitless.
       c(j) = tau_fac*c0(j) !unitless.
@@ -312,6 +311,7 @@ subroutine nitrogen_overtone_continuum(n_absrb, jrad, wn2, grid, &
     enddo
     call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
     call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+    deallocate(c, c0)
   endif
 end subroutine nitrogen_overtone_continuum
 

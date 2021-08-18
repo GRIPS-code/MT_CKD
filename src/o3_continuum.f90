@@ -15,9 +15,9 @@ subroutine xo3chp(v1c, v2c, dvc, nptc, c0, c1, c2, v1ss, v2ss, v1abs, v2abs, pat
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c0 ![cm3].
-  real(kind=real64), dimension(:), intent(inout) :: c1 ![cm3 K-1].
-  real(kind=real64), dimension(:), intent(inout) :: c2 ![cm3 K-2].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c0 ![cm3].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c1 ![cm3 K-1].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c2 ![cm3 K-2].
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
@@ -51,23 +51,23 @@ subroutine xo3chp(v1c, v2c, dvc, nptc, c0, c1, c2, v1ss, v2ss, v1abs, v2abs, pat
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(c0(nptc), c1(nptc), c2(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     if ((i .lt. 1) .or. (i .gt. npts)) then
-      c0(j) = 0.
-      c1(j) = 0.
-      c2(j) = 0.
+      c0(j) = 0._real64
+      c1(j) = 0._real64
+      c2(j) = 0._real64
     else
-!            remove radiation field from diffuse ozone
       vj = v1c + dvc*real(j - 1)
       c0(j) = x(i)/vj ![cm3].
       c1(j) = y(i)/vj ![cm3 K-1].
@@ -82,12 +82,12 @@ subroutine o3hht0(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c ![cm3].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c ![cm3].
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
-  integer :: dimid, i, i1,i2, j, ncid, npts, varid
+  integer :: dimid, i, i1, i2, j, ncid, npts, varid
   real(kind=real64) :: dvs, vj, v1s, v2s
   real(kind=real64), dimension(:), allocatable :: s
 
@@ -112,15 +112,16 @@ subroutine o3hht0(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -136,7 +137,7 @@ subroutine o3hht1(v1c, v2c, dvc, nptc, c, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c ![K-1].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c ![K-1].
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
@@ -163,18 +164,19 @@ subroutine o3hht1(v1c, v2c, dvc, nptc, c, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
-    c(j) = 0.
+    c(j) = 0._real64
     if ((i .lt. 1) .or. (i .gt. npts)) continue
     c(j) = s(i) ![K-1].
   enddo
@@ -186,7 +188,7 @@ subroutine o3hht2(v1c, v2c, dvc, nptc, c, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c ![K-2].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c ![K-2].
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
 
@@ -213,18 +215,19 @@ subroutine o3hht2(v1c, v2c, dvc, nptc, c, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
-    c(j) = 0.
+    c(j) = 0._real64
     if ((i .lt. 1) .or. (i .gt. npts)) continue
     c(j) = s(i) ![K-2].
   enddo
@@ -236,7 +239,7 @@ subroutine o3hhuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c ![cm3].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c ![cm3].
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
   character(len=*), intent(in) :: path
@@ -266,15 +269,16 @@ subroutine o3hhuv(v1c, v2c, dvc, nptc, c, v1ss, v2ss, v1abs, v2abs, path)
   if (v1c .lt. v1s) then
     i1 = -1
   else
-    i1 = (v1c - v1s)/dvs + 0.01
+    i1 = int((v1c - v1s)/dvs + 0.01_real64)
   endif
 
   v1c = v1s + dvs*real(i1 - 1)
-  i2 = (v2c - v1s)/dvs + 0.01
+  i2 = int((v2c - v1s)/dvs + 0.01_real64)
   nptc = i2 - i1 + 3
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0.
@@ -297,12 +301,9 @@ subroutine ozone_cw_continuum(jrad, wk, grid, tave, path, absrb)
 
   integer :: npto3, j, ist, last
   real(kind=real64) :: wo3, v1c, v2c, dvc, v1ss, v2ss, dt, vj
-  real(kind=real64), dimension(5150):: cch0, cch1, cch2
+  real(kind=real64), dimension(:), allocatable :: cch0, cch1, cch2
 
   if (grid%xn .gt. 8920._real64 .and. grid%x0 .le. 24665._real64) then
-    cch0(:) = 0._real64 ![cm3].
-    cch1(:) = 0._real64 ![cm3 K-1].
-    cch2(:) = 0._real64 ![cm3 K-2].
     wo3 = wk*1.0e-20_real64 ![cm-3].
     call xo3chp(v1c, v2c, dvc, npto3, cch0, cch1, cch2, v1ss, v2ss, grid%x0, grid%xn, path)
     dt = tave - 273.15_real64 ![K].
@@ -313,13 +314,14 @@ subroutine ozone_cw_continuum(jrad, wk, grid, tave, path, absrb)
     enddo
     call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
     call xint(v1c, v2c, dvc, cch0, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+    deallocate(cch0, cch1, cch2)
   endif
 end subroutine ozone_cw_continuum
 
 
-subroutine ozone_hh_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
+subroutine ozone_hh_continuum(jrad, wk, grid, tave, path, absrb)
 
-  integer, intent(in) :: n_absrb, jrad
+  integer, intent(in) :: jrad
   real(kind=real64), intent(in) :: wk !< Ozone number density [cm-3].
   real(kind=real64), intent(in) :: tave !< Temperature [K].
   type(SpectralGrid), intent(in) :: grid !< Spectral grid.
@@ -329,18 +331,15 @@ subroutine ozone_hh_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
   integer :: npto3, npt1, npt2, j, i, i_fix, ist, last
   real(kind=real64) :: wo3, tc, v1c, v2c, dvc, v1ss, v2ss, v1t1, v2t1, dvt1, v1t2, &
                        v2t2, dvt2, vj
-  real(kind=real64), dimension(6000) :: c
-  real(kind=real64), dimension(n_absrb) :: c0, ct1, ct2, absbsv
+  real(kind=real64), dimension(:), allocatable :: c, c0, ct1, ct2, absbsv
 
   if (grid%xn .gt. 27370._real64 .and. grid%x0 .lt. 40800._real64) then
-    c0(:) = 0._real64 ![cm3].
-    ct1(:) = 0._real64 ![K-1].
-    ct2(:) = 0._real64 ![K-2].
     wo3 = wk*1.e-20_real64 ![cm-3].
     tc = tave - 273.15_real64 ![K].
     call o3hht0(v1c, v2c, dvc, npto3, c0, v1ss, v2ss, grid%x0, grid%xn, path)
     call o3hht1(v1t1, v2t1, dvt1, npt1, ct1, grid%x0, grid%xn, path)
     call o3hht2(v1t2, v2t2, dvt2, npt2, ct2, grid%x0, grid%xn, path)
+    allocate(c(npto3))
     do j = 1, npto3
       c(j) = c0(j)*wo3 !unitless.
       vj = v1c + dvc*real(j - 1) ![cm-1].
@@ -351,6 +350,7 @@ subroutine ozone_hh_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
     !Save non-Hartley Huggins optical depth contribution to
     !prevent double counting for wavenumber region beyond
     !40800 cm-1.
+    allocate(absbsv(size(absrb)))
     if (vj .gt. 40815._real64 .and. grid%xn .gt. 40800._real64) then
       i_fix = int((40800._real64 - grid%x0)/grid%dx + 1.001_real64)
       do i = i_fix, grid%n
@@ -369,13 +369,14 @@ subroutine ozone_hh_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
         absrb(i) = absbsv(i) ![cm-1].
       enddo
     endif
+    deallocate(absbsv, c, c0, ct1, ct2)
   endif
 end subroutine ozone_hh_continuum
 
 
-subroutine ozone_uv_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
+subroutine ozone_uv_continuum(jrad, wk, grid, tave, path, absrb)
 
-  integer :: n_absrb, jrad
+  integer :: jrad
   real(kind=real64), intent(in) :: wk !< Ozone number density [cm-3].
   real(kind=real64), intent(in) :: tave !< Temperature [K].
   type(SpectralGrid), intent(in) :: grid !< Spectral grid.
@@ -384,13 +385,12 @@ subroutine ozone_uv_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
 
   integer :: npto3, j, i, i_fix, ist, last
   real(kind=real64) :: wo3, v1c, v2c, dvc, v1ss, v2ss, vj
-  real(kind=real64), dimension(6000) :: c
-  real(kind=real64), dimension(n_absrb) :: c0, absbsv
+  real(kind=real64), dimension(:), allocatable :: c, c0, absbsv
 
   if (grid%xn .gt. 40800._real64 .and. grid%x0 .lt. 54000._real64) then
-    c0(:) = 0._real64 ![cm3].
     wo3 = wk ![cm-3].
     call o3hhuv(v1c, v2c, dvc, npto3, c0, v1ss, v2ss, grid%x0, grid%xn, path)
+    allocate(c(npto3))
     do j = 1, npto3
       c(j) = c0(j)*wo3 !unitless.
       vj = v1c + dvc*real(j - 1) ![cm-1].
@@ -400,6 +400,7 @@ subroutine ozone_uv_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
     !Save non-Hartley Huggins UV optical depth contribution to
     !prevent double counting for wavenumber region before
     !40800 cm-1.
+    allocate(absbsv(size(absrb)))
     if (grid%x0 .lt. 40800._real64) then
       i_fix = int((40800._real64 - grid%x0)/grid%dx + 1.001_real64)
       do i = 1, i_fix - 1
@@ -418,6 +419,7 @@ subroutine ozone_uv_continuum(n_absrb, jrad, wk, grid, tave, path, absrb)
         absrb(i) = absbsv(i) ![cm-1].
       enddo
     endif
+    deallocate(c, c0, absbsv)
   endif
 end subroutine ozone_uv_continuum
 

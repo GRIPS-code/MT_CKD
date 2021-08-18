@@ -15,7 +15,7 @@ subroutine frnco2(v1c, v2c, dvc, nptc, c, tave, v1ss, v2ss, v1abs, v2abs, path)
 
   real(kind=real64), intent(out) :: v1c, v2c, dvc
   integer, intent(out) :: nptc
-  real(kind=real64), dimension(:), intent(inout) :: c ![cm3].
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: c ![cm3].
   real(kind=real64), intent(in) :: tave
   real(kind=real64), intent(out) :: v1ss, v2ss
   real(kind=real64), intent(in) :: v1abs, v2abs
@@ -60,6 +60,7 @@ subroutine frnco2(v1c, v2c, dvc, nptc, c, tave, v1ss, v2ss, v1abs, v2abs, path)
   if (nptc .gt. npts) nptc = npts + 4
   v2c = v1c + dvs*real(nptc - 1)
 
+  allocate(c(nptc))
   do j = 1, nptc
     i = i1 + (j - 1)
     c(j) = 0._real64
@@ -74,9 +75,9 @@ end subroutine frnco2
 
 
 !> @brief Carbon dixoide continuum.
-subroutine carbon_dioxide_continuum(n_absrb, jrad, wk, grid, tave, pave, path, absrb)
+subroutine carbon_dioxide_continuum(jrad, wk, grid, tave, pave, path, absrb)
 
-  integer, intent(in) :: n_absrb, jrad
+  integer, intent(in) :: jrad
   real(kind=real64), intent(in) :: wk !< Carbon dioxide number density [cm-3].
   real(kind=real64), intent(in) :: tave !< Temperature [K].
   real(kind=real64), intent(in) :: pave !< Pressure [mb].
@@ -86,18 +87,17 @@ subroutine carbon_dioxide_continuum(n_absrb, jrad, wk, grid, tave, pave, path, a
 
   integer :: ncid, varid, nptc, j, jfac, ist, last
   real(kind=real64) :: wco2, v1c, v2c, dvc, v1ss, v2ss, vj, cfac
-  real(kind=real64), dimension(n_absrb) :: fco2
+  real(kind=real64), dimension(:), allocatable :: c, fco2
   real(kind=real64), dimension(500) :: xfacco2
-  real(kind=real64), dimension(6000) :: c
 
   if (grid%xn .gt. -20._real64 .and. grid%x0 .lt. 10000._real64) then
     call nc_check(nf90_open(path, nf90_nowrite, ncid))
     call nc_check(nf90_inq_varid(ncid, "xfacco2", varid))
     call nc_check(nf90_get_var(ncid, varid, xfacco2))
     call nc_check(nf90_close(ncid))
-    fco2(:) = 0._real64 ![cm3].
     wco2 = wk*(pave/p0)*(t0/tave)*1.0e-20_real64 ![cm-3].
     call frnco2(v1c, v2c, dvc, nptc, fco2, tave, v1ss, v2ss, grid%x0, grid%xn, path)
+    allocate(c(nptc))
     do j = 1, nptc
       vj = v1c + dvc*real(j - 1)
       cfac = 1._real64 !unitless
@@ -111,6 +111,7 @@ subroutine carbon_dioxide_continuum(n_absrb, jrad, wk, grid, tave, pave, path, a
     enddo
     call pre_xint(v1ss, v2ss, grid%x0, grid%dx, grid%n, ist, last)
     call xint(v1c, v2c, dvc, c, 1._real64, grid%x0, grid%dx, absrb, ist, last)
+    deallocate(c, fco2)
   endif
 end subroutine carbon_dioxide_continuum
 

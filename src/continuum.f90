@@ -41,16 +41,14 @@ subroutine contnm(pave, tave, vmr, path_length, grid, icflg, jrad, xcnt, &
   type(SpectralGrid), intent(out) :: h2o_grid
   real(kind=real64), dimension(:), intent(inout) :: absrb
   character(len=*), intent(in) :: path
-  real(kind=real64), dimension(:), intent(inout) :: csh2o, cfh2o
+  real(kind=real64), dimension(:), allocatable, intent(inout) :: csh2o, cfh2o
 
   integer :: j, nptabsc
-  integer, parameter :: ipts = 5050
-  integer, parameter :: n_absrb = 5050
   integer, dimension(17) :: fscdid
   real(kind=real64) :: wn2, x_vmr_h2o, x_vmr_o2, x_vmr_n2, &
                        v1absc, v2absc, dvabsc, xself, xfrgn, xco2c, xo3cn, xo2cn, &
                        xn2cn, xrayl
-  real(kind=real64), dimension(ipts) :: cself, cfrgn_aj
+  real(kind=real64), dimension(:), allocatable :: cself, cfrgn_aj
 
   real(kind=real64) :: air_density, dry_air_density, total_density
   real(kind=real64), dimension(size(vmr)) :: density
@@ -76,11 +74,11 @@ subroutine contnm(pave, tave, vmr, path_length, grid, icflg, jrad, xcnt, &
   !H2O continuum derivatives are computed w.r.t. ln(q)
   !dqh2o must be returned with the radiation field included
   if (icflg .gt. 0) then
-    wn2 = 0.
-    do j = 1, ipts
-      cself(j) = 0.
-      cfrgn_aj(j) = 0.
-    enddo
+!   wn2 = 0.
+!   do j = 1, ipts
+!     cself(j) = 0.
+!     cfrgn_aj(j) = 0.
+!   enddo
     v1absc = grid%x0
     v2absc = grid%xn
     dvabsc = grid%dx
@@ -103,58 +101,51 @@ subroutine contnm(pave, tave, vmr, path_length, grid, icflg, jrad, xcnt, &
 
   !Water vapor
   if (xself .gt. 0.) then
-    call water_vapor_self_continuum(n_absrb, jrad, density(h2o), total_density, &
+    call water_vapor_self_continuum(jrad, density(h2o), total_density, &
                                     grid, tave, pave, path, h2o_grid, &
                                     csh2o, absrb, cself)
   endif
   if (xfrgn .gt. 0) then
-    call water_vapor_foreign_continuum(n_absrb, icflg, jrad, density(h2o), &
+    call water_vapor_foreign_continuum(icflg, jrad, density(h2o), &
                                        total_density, grid, tave, pave, &
                                        cself, path, cfh2o, absrb)
   endif
 
   !Carbon dioxide
   if (xco2c .gt. 0.) then
-    call carbon_dioxide_continuum(n_absrb, jrad, density(co2), grid, tave, pave, &
+    call carbon_dioxide_continuum(jrad, density(co2), grid, tave, pave, &
                                   path, absrb)
   endif
 
   !DIFFUSE OZONE
   if (xo3cn .gt. 0.) then
     call ozone_cw_continuum(jrad, density(o3), grid, tave, path, absrb)
-    call ozone_hh_continuum(n_absrb, jrad, density(o3), grid, &
-                            tave, path, absrb)
-    call ozone_uv_continuum(n_absrb, jrad, density(o3), grid, &
-                            tave, path, absrb)
+    call ozone_hh_continuum(jrad, density(o3), grid, tave, path, absrb)
+    call ozone_uv_continuum(jrad, density(o3), grid, tave, path, absrb)
   endif
 
   !OXYGEN
   if (xo2cn .gt. 0.) then
-    call oxygen_fundamental_continuum(n_absrb, jrad, density(o2), grid, &
-                                      tave, pave, path, absrb)
-    call oxygen_nir1_continuum(n_absrb, jrad, density(o2), grid, &
+    call oxygen_fundamental_continuum(jrad, density(o2), grid, tave, pave, path, absrb)
+    call oxygen_nir1_continuum(jrad, density(o2), grid, &
                                tave, pave, x_vmr_o2, x_vmr_n2, x_vmr_h2o, &
                                path, absrb)
-    call oxygen_nir2_continuum(n_absrb, jrad, density(o2), total_density, &
-                               grid, tave, pave, absrb)
-    call oxygen_nir3_continuum(n_absrb, jrad, density(o2), grid, &
-                               tave, pave, path, absrb)
-    call oxygen_visible_continuum(n_absrb, jrad, density(o2), total_density, &
+    call oxygen_nir2_continuum(jrad, density(o2), total_density, grid, tave, pave, absrb)
+    call oxygen_nir3_continuum(jrad, density(o2), grid, tave, pave, path, absrb)
+    call oxygen_visible_continuum(jrad, density(o2), total_density, &
                                   grid, tave, pave, path, absrb)
-    call oxygen_herzberg_continuum(n_absrb, jrad, density(o2), grid, &
-                                   tave, pave, absrb)
-    call oxygen_uv_continuum(n_absrb, jrad, density(o2), grid, &
-                             tave, path, absrb)
+    call oxygen_herzberg_continuum(jrad, density(o2), grid, tave, pave, absrb)
+    call oxygen_uv_continuum(jrad, density(o2), grid, tave, path, absrb)
   endif
 
   !NITROGEN CONTINUA
   if (xn2cn .gt. 0.) then
-    call nitrogen_continuum(n_absrb, jrad, wn2, grid, &
+    call nitrogen_continuum(jrad, wn2, grid, &
                             tave, pave, x_vmr_n2, x_vmr_o2, x_vmr_h2o, path, absrb)
     call nitrogen_fundamental_continuum(jrad, wn2, grid, &
                                         tave, pave, x_vmr_n2, x_vmr_o2, x_vmr_h2o, &
                                         path, absrb)
-    call nitrogen_overtone_continuum(n_absrb, jrad, wn2, grid, &
+    call nitrogen_overtone_continuum(jrad, wn2, grid, &
                                      tave, pave, x_vmr_n2, x_vmr_o2, x_vmr_h2o, &
                                      path, absrb)
   endif
