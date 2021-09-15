@@ -1,18 +1,18 @@
-from numpy import arange, exp, interp, log, power, zeros
+from numpy import arange, exp, log, power, zeros
 
 from .utils import air_number_density, BandedContinuum, Continuum, dry_air_number_density, \
                    LOSCHMIDT, P0, radiation_term, Spectrum, T0, T273
 
 
 class OxygenContinuum(BandedContinuum):
-    def __init__(self, path):
-        self.bands = [OxygenCIAFundamentalContinuum(path),
-                      OxygenCIANIRContinuum(path),
-                      OxygenCIANIR2Continuum(path),
-                      OxygenCIANIR3Continuum(path),
-                      OxygenVisibleContinuum(path),
-                      OxygenHerzbergContinuum(path),
-                      OxygenUVContinuum(path)]
+    def __init__(self):
+        self.bands = [OxygenCIAFundamentalContinuum(self.path),
+                      OxygenCIANIRContinuum(self.path),
+                      OxygenCIANIR2Continuum(self.path),
+                      OxygenCIANIR3Continuum(self.path),
+                      OxygenVisibleContinuum(self.path),
+                      OxygenHerzbergContinuum(self.path),
+                      OxygenUVContinuum(self.path)]
 
 
 class OxygenCIAFundamentalContinuum(Continuum):

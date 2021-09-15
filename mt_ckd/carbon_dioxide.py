@@ -5,8 +5,8 @@ from .utils import BandedContinuum, Continuum, dry_air_number_density, P0, radia
 
 
 class CarbonDioxideContinuum(BandedContinuum):
-    def __init__(self, path):
-        self.bands = [CarbonDioxideHartmannContinuum(path),]
+    def __init__(self):
+        self.bands = [CarbonDioxideHartmannContinuum(self.path),]
 
 
 class CarbonDioxideHartmannContinuum(Continuum):

@@ -10,6 +10,9 @@ setup(
     url="",
     python_requires=">=3.5",
     packages=find_packages(),
+    package_data={
+        "mt_ckd": ["*.nc",],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: ",

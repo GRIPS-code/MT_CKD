@@ -5,8 +5,8 @@ from .utils import air_number_density, BandedContinuum, Continuum, dry_air_numbe
 
 
 class WaterVaporSelfContinuum(BandedContinuum):
-    def __init__(self, path):
-        self.bands = [WaterVaporARMSelfContinuum(path),]
+    def __init__(self):
+        self.bands = [WaterVaporARMSelfContinuum(self.path),]
 
 
 class WaterVaporARMSelfContinuum(Continuum):
@@ -34,8 +34,8 @@ class WaterVaporARMSelfContinuum(Continuum):
 
 
 class WaterVaporForeignContinuum(BandedContinuum):
-    def __init__(self, path):
-        self.bands = [WaterVaporIASIForeignContinuum(path),]
+    def __init__(self):
+        self.bands = [WaterVaporIASIForeignContinuum(self.path),]
 
 
 class WaterVaporIASIForeignContinuum(Continuum):

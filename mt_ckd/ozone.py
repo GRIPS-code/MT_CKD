@@ -1,14 +1,12 @@
-from numpy import interp, zeros
-
 from .utils import BandedContinuum, Continuum, dry_air_number_density, radiation_term, \
                    Spectrum, T273
 
 
-class OzoneContinuum(object):
-    def __init__(self, path):
-        self.bands = [OzoneChappuisWulfContinuum(path),
-                      OzoneHartleyHugginsContinuum(path),
-                      OzoneUVContinuum(path)]
+class OzoneContinuum(BandedContinuum):
+    def __init__(self):
+        self.bands = [OzoneChappuisWulfContinuum(self.path),
+                      OzoneHartleyHugginsContinuum(self.path),
+                      OzoneUVContinuum(self.path)]
 
 
 class OzoneChappuisWulfContinuum(Continuum):

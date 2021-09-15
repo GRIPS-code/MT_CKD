@@ -1,5 +1,7 @@
+from os.path import dirname, join, realpath
+
 from netCDF4 import Dataset
-from numpy import asarray, copy, exp, where
+from numpy import asarray, copy, exp, interp, where, zeros
 
 
 LOSCHMIDT = 2.6867775e19 # Loschmidt constant [cm-3]
@@ -7,7 +9,8 @@ P0 = 1013.25 # Reference pressure (1 atmosphere) [mb].
 SECOND_RADIATION_CONSTANT = 1.4387752 # Second radiation constant [cm K].
 T0 = 296. # Reference temperature [K].
 T273 = 273.15 # Reference temperature (0 celcius) [K].
-
+m_to_cm = 100.
+pa_to_mb = 0.01
 
 def air_number_density(pressure, temperature, volume_mixing_ratio):
     """Calculates the air number density.
@@ -129,7 +132,7 @@ class Spectrum(object):
 #           self.units = v.getncattr("units")
 
     def wavenumbers(self):
-        """Cacluates the wavenumber grid [cm-1] for the variable.
+        """Calculates the wavenumber grid [cm-1] for the variable.
 
         Returns:
             A 1d numpy array containing the wavenumber grid [cm-1].
@@ -144,12 +147,9 @@ class BandedContinuum(object):
     Attributes:
         bands: List of Continuum objects.
     """
-    def __init__(self, path):
-        """Reads in the necessary data from an input dataset.
-
-        Args:
-            path: Path to the netcdf dataset.
-        """
+    path = join(dirname(realpath(__file__)), "mt-ckd.nc")
+    def __init__(self):
+        """Reads in the necessary data from an input dataset."""
         raise NotImplementedError("You must override this method.")
 
     def spectra(self, temperature, pressure, vmr, grid):
@@ -157,15 +157,16 @@ class BandedContinuum(object):
 
         Args:
             temperature: Temperature [K].
-            pressure: Pressure [mb].
+            pressure: Pressure [Pa].
             vmr: Dictionary of volume mixing ratios [mol mol-1].
             grid: Array containing the spectral grid [cm-1].
 
         Return:
-            An array of continuum extinction [cm-1].
+            An array of continuum extinction [m-1].
         """
         s = zeros(grid.size)
         for band in self.bands:
-            s[:] += interp(grid, band.grid(), band.spectra(temperature, pressure, vmr),
-                           left=0., right=0.)[:]
+            s[:] += interp(grid, band.grid(),
+                           band.spectra(temperature, pressure*pa_to_mb, vmr),
+                           left=0., right=0.)[:]*m_to_cm
         return s
