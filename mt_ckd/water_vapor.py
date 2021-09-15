@@ -1,10 +1,15 @@
 from numpy import power, zeros
 
-from .utils import air_number_density, Continuum, dry_air_number_density, P0, \
-                   radiation_term, Spectrum, subgrid_bounds, T0
+from .utils import air_number_density, BandedContinuum, Continuum, dry_air_number_density, \
+                   P0, radiation_term, Spectrum, subgrid_bounds, T0
 
 
-class WaterVaporSelfContinuum(Continuum):
+class WaterVaporSelfContinuum(BandedContinuum):
+    def __init__(self, path):
+        self.bands = [WaterVaporARMSelfContinuum(path),]
+
+
+class WaterVaporARMSelfContinuum(Continuum):
     """Water vapor self continuum coefficients.
 
     Attributes:
@@ -28,7 +33,12 @@ class WaterVaporSelfContinuum(Continuum):
         return self.data[296].wavenumbers()
 
 
-class WaterVaporForeignContinuum(Continuum):
+class WaterVaporForeignContinuum(BandedContinuum):
+    def __init__(self, path):
+        self.bands = [WaterVaporIASIForeignContinuum(path),]
+
+
+class WaterVaporIASIForeignContinuum(Continuum):
     """Water vapor foreign continuum coefficients.
 
     Attributes:

@@ -1,4 +1,14 @@
-from .utils import Continuum, dry_air_number_density, radiation_term, Spectrum, T273
+from numpy import interp, zeros
+
+from .utils import BandedContinuum, Continuum, dry_air_number_density, radiation_term, \
+                   Spectrum, T273
+
+
+class OzoneContinuum(object):
+    def __init__(self, path):
+        self.bands = [OzoneChappuisWulfContinuum(path),
+                      OzoneHartleyHugginsContinuum(path),
+                      OzoneUVContinuum(path)]
 
 
 class OzoneChappuisWulfContinuum(Continuum):
@@ -12,7 +22,7 @@ class OzoneChappuisWulfContinuum(Continuum):
 
     def spectra(self, temperature, pressure, vmr):
         no3 = dry_air_number_density(pressure, temperature, vmr)*vmr["O3"]
-        dt = temperature - 273.15
+        dt = temperature - T273
         rad = radiation_term(self.grid()[:], temperature)
         return 1.e-20*no3*rad*(self.data[0].data[:] + self.data[1].data[:]*dt +
                                self.data[2].data[:]*dt*dt)/self.grid()[:]

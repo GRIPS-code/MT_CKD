@@ -136,3 +136,36 @@ class Spectrum(object):
         """
         return asarray([self.grid["lower_bound"] + i*self.grid["resolution"]
                         for i in range(self.data.size)])
+
+
+class BandedContinuum(object):
+    """Contains all bands for a specific molecule's continuum.
+
+    Attributes:
+        bands: List of Continuum objects.
+    """
+    def __init__(self, path):
+        """Reads in the necessary data from an input dataset.
+
+        Args:
+            path: Path to the netcdf dataset.
+        """
+        raise NotImplementedError("You must override this method.")
+
+    def spectra(self, temperature, pressure, vmr, grid):
+        """Calculates the continum spectrum and interpolates to the input grid.
+
+        Args:
+            temperature: Temperature [K].
+            pressure: Pressure [mb].
+            vmr: Dictionary of volume mixing ratios [mol mol-1].
+            grid: Array containing the spectral grid [cm-1].
+
+        Return:
+            An array of continuum extinction [cm-1].
+        """
+        s = zeros(grid.size)
+        for band in self.bands:
+            s[:] += interp(grid, band.grid(), band.spectra(temperature, pressure, vmr),
+                           left=0., right=0.)[:]
+        return s

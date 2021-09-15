@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 from netCDF4 import Dataset
 from numpy import arange, interp, seterr, zeros
 
-from mt_ckd import CarbonDioxideContinuum, \
+from mt_ckd import CarbonDioxideHartmannContinuum, \
                    NitrogenCIAPureRotationContinuum, NitrogenCIAFundamentalContinuum, \
                    NitrogenCIAFirstOvertoneContinuum, \
                    OxygenCIAFundamentalContinuum, OxygenCIANIRContinuum, \
                    OxygenCIANIR2Continuum, OxygenCIANIR3Continuum, OxygenVisibleContinuum, \
                    OxygenHerzbergContinuum, OxygenUVContinuum, \
                    OzoneChappuisWulfContinuum, OzoneHartleyHugginsContinuum, OzoneUVContinuum, \
-                   WaterVaporForeignContinuum, WaterVaporSelfContinuum
+                   WaterVaporIASIForeignContinuum, WaterVaporARMSelfContinuum
 
 
 if __name__ == "__main__":
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     grid = arange(0., 10002., 2)
     extinction = zeros(grid.size)
 #   path_length = 1. # [cm].
-    continua = {"CO2": CarbonDioxideContinuum,
+    continua = {"CO2": CarbonDioxideHartmannContinuum,
                 "N2_rot": NitrogenCIAPureRotationContinuum,
                 "N2_fund": NitrogenCIAFundamentalContinuum,
                 "N2_over": NitrogenCIAFirstOvertoneContinuum,
@@ -45,8 +45,8 @@ if __name__ == "__main__":
                 "O3_cw": OzoneChappuisWulfContinuum,
                 "O3_hh": OzoneHartleyHugginsContinuum,
                 "O3_uv": OzoneUVContinuum,
-                "H2O_f": WaterVaporForeignContinuum,
-                "H2O_s": WaterVaporSelfContinuum}
+                "H2O_f": WaterVaporIASIForeignContinuum,
+                "H2O_s": WaterVaporARMSelfContinuum}
     test_results = {"N2": "n2", "H2O_s": "h2o-self", "H2O_f": "h2o-foreign", "CO2": "co2",
                     "O3": "o3", "O2": "o2"}
 

@@ -1,7 +1,14 @@
-from numpy import power, zeros
+from numpy import interp, power, zeros
 
-from .utils import Continuum, dry_air_number_density, LOSCHMIDT, P0, radiation_term, \
-                   Spectrum, T0, T273
+from .utils import BandedContinuum, Continuum, dry_air_number_density, LOSCHMIDT, P0, \
+                   radiation_term, Spectrum, T0, T273
+
+
+class NitrogenContinuum(BandedContinuum):
+    def __init__(self, path):
+        self.bands = [NitrogenCIAPureRotationContinuum(path),
+                      NitrogenCIAFundamentalContinuum(path),
+                      NitrogenCIAFirstOvertoneContinuum(path)]
 
 
 class NitrogenCIAPureRotationContinuum(Continuum):

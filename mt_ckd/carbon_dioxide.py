@@ -1,10 +1,15 @@
 from numpy import ones, power
 
-from .utils import Continuum, dry_air_number_density, P0, radiation_term, Spectrum, \
-                   subgrid_bounds, T0
+from .utils import BandedContinuum, Continuum, dry_air_number_density, P0, radiation_term, \
+                   Spectrum, subgrid_bounds, T0
 
 
-class CarbonDioxideContinuum(Continuum):
+class CarbonDioxideContinuum(BandedContinuum):
+    def __init__(self, path):
+        self.bands = [CarbonDioxideHartmannContinuum(path),]
+
+
+class CarbonDioxideHartmannContinuum(Continuum):
     """Carbon dioxide continuum coefficients.
 
     Attributes:
