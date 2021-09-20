@@ -9,8 +9,9 @@ P0 = 1013.25 # Reference pressure (1 atmosphere) [mb].
 SECOND_RADIATION_CONSTANT = 1.4387752 # Second radiation constant [cm K].
 T0 = 296. # Reference temperature [K].
 T273 = 273.15 # Reference temperature (0 celcius) [K].
-m_to_cm = 100.
-pa_to_mb = 0.01
+m_to_cm = 100. # [cm m-1].
+Pa_to_mb = 0.01 # [mb Pa-1].
+
 
 def air_number_density(pressure, temperature, volume_mixing_ratio):
     """Calculates the air number density.
@@ -51,7 +52,7 @@ def radiation_term(wavenumber, temperature):
     Returns:
         The radiation term [cm-1].
     """
-    t = (temperature/SECOND_RADIATION_CONSTANT)
+    t = temperature/SECOND_RADIATION_CONSTANT
     x = wavenumber[:]/t
     r = wavenumber[:]
     r = where(x <= 0.01, 0.5*x*wavenumber, r)
@@ -167,6 +168,6 @@ class BandedContinuum(object):
         s = zeros(grid.size)
         for band in self.bands:
             s[:] += interp(grid, band.grid(),
-                           band.spectra(temperature, pressure*pa_to_mb, vmr),
+                           band.spectra(temperature, pressure*Pa_to_mb, vmr),
                            left=0., right=0.)[:]*m_to_cm
         return s
