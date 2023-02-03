@@ -1,0 +1,21 @@
+package:
+  name: mt_ckd
+  version: "0.0"
+
+source:
+  git_rev: main
+  git_url: https://github.com/GRIPS-code/MT_CKD.git
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - matplotlib
+    - netCDF4
+    - numpy
+
+about:
+    home: https://github.com/GRIPS-code/MT_CKD
