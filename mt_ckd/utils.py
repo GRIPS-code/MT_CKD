@@ -4,13 +4,13 @@ from netCDF4 import Dataset
 from numpy import asarray, copy, exp, interp, where, zeros
 
 
-LOSCHMIDT = 2.6867775e19 # Loschmidt constant [cm-3]
-P0 = 1013.25 # Reference pressure (1 atmosphere) [mb].
-SECOND_RADIATION_CONSTANT = 1.4387752 # Second radiation constant [cm K].
-T0 = 296. # Reference temperature [K].
-T273 = 273.15 # Reference temperature (0 celcius) [K].
-m_to_cm = 100. # [cm m-1].
-Pa_to_mb = 0.01 # [mb Pa-1].
+LOSCHMIDT = 2.6867775e19  # Loschmidt constant [cm-3]
+P0 = 1013.25  # Reference pressure (1 atmosphere) [mb].
+SECOND_RADIATION_CONSTANT = 1.4387752  # Second radiation constant [cm K].
+T0 = 296.  # Reference temperature [K].
+T273 = 273.15  # Reference temperature (0 celcius) [K].
+m_to_cm = 100.  # [cm m-1].
+Pa_to_mb = 0.01  # [mb Pa-1].
 
 
 def air_number_density(pressure, temperature, volume_mixing_ratio):
@@ -149,6 +149,7 @@ class BandedContinuum(object):
         bands: List of Continuum objects.
     """
     path = join(dirname(realpath(__file__)), "mt-ckd.nc")
+
     def __init__(self):
         """Reads in the necessary data from an input dataset."""
         raise NotImplementedError("You must override this method.")

@@ -33,9 +33,10 @@ class CarbonDioxideHartmannContinuum(Continuum):
     def spectra(self, temperature, pressure, vmr):
         nco2 = dry_air_number_density(pressure, temperature, vmr)*vmr["CO2"]
         rad = radiation_term(self.grid()[:], temperature)
-        return nco2*1.e-20*(pressure/P0)*(T0/temperature)*rad[:]* \
-               self.xfac_co2[:]*power(temperature/246., self.t_correction[:])* \
-               self.data.data[:]
+        return \
+            nco2*1.e-20*(pressure/P0)*(T0/temperature)*rad[:] * \
+            self.xfac_co2[:]*power(temperature/246., self.t_correction[:]) * \
+            self.data.data[:]
 
     def grid(self):
         return self.data.wavenumbers()

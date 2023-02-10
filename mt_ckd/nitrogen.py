@@ -45,7 +45,7 @@ class NitrogenCIAFundamentalContinuum(Continuum):
         xtfac = (1./temperature - 1./272.)/(1./228. - 1./272.)
         ao2 = 1.294 - 0.4545*temperature/T0
         c0 = zeros(self.data[0].data.size)
-        c0[1: -1] = self.data[0].data[1: -1]*power(self.data[1].data[1: -1]/
+        c0[1: -1] = self.data[0].data[1: -1]*power(self.data[1].data[1: -1] /
                                                    self.data[0].data[1: -1], xtfac)
         c0 = c0[:]/self.grid()[:]
         c1 = ao2*c0[:]
@@ -62,7 +62,7 @@ class NitrogenCIAFirstOvertoneContinuum(Continuum):
 
     def spectra(self, temperature, pressure, vmr):
         nn2 = dry_air_number_density(pressure, temperature, vmr)*vmr["N2"]
-        tau_factor = (nn2/LOSCHMIDT)*(pressure/P0)*(T273/temperature)* \
+        tau_factor = (nn2/LOSCHMIDT)*(pressure/P0)*(T273/temperature) * \
                      (vmr["N2"] + vmr["O2"] + vmr["H2O"])
         rad = radiation_term(self.grid()[:], temperature)
         return tau_factor*rad[:]*self.data.data[:]/self.grid()[:]

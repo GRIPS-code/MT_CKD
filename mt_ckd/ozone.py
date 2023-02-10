@@ -43,8 +43,9 @@ class OzoneHartleyHugginsContinuum(Continuum):
         no3 = dry_air_number_density(pressure, temperature, vmr)*vmr["O3"]
         dt = temperature - T273
         rad = radiation_term(self.grid()[:], temperature)
-        return 1.e-20*no3*rad*(self.data[0].data[:]/self.grid()[:])* \
-               (1. + self.data[1].data[:]*dt + self.data[2].data[:]*dt*dt)
+        return \
+            1.e-20*no3*rad*(self.data[0].data[:]/self.grid()[:]) * \
+            (1. + self.data[1].data[:]*dt + self.data[2].data[:]*dt*dt)
 
     def grid(self):
         return self.data[0].wavenumbers()

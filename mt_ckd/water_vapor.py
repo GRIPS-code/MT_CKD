@@ -25,9 +25,10 @@ class WaterVaporARMSelfContinuum(Continuum):
         nh2o = dry_air_number_density(pressure, temperature, vmr)*vmr["H2O"]
         n = air_number_density(pressure, temperature, vmr)
         rad = radiation_term(self.grid()[:], temperature)
-        return nh2o*(nh2o/n)*(pressure/P0)*(T0/temperature)*1.e-20*rad* \
-               self.data[296].data[:]*power(self.data[260].data[:]/self.data[296].data[:],
-                                            t_factor)
+        return \
+            nh2o*(nh2o/n)*(pressure/P0)*(T0/temperature)*1.e-20*rad * \
+            self.data[296].data[:]*power(self.data[260].data[:]/self.data[296].data[:],
+                                         t_factor)
 
     def grid(self):
         return self.data[296].wavenumbers()
@@ -59,15 +60,17 @@ class WaterVaporIASIForeignContinuum(Continuum):
         vdelmsq1 = (w[:] + 255.67)*(w[:] + 255.67)
         vmf1 = power((w[:] + 255.67)/57.83, 8)
         vf2 = power(w[:]/630., 8)
-        self.scale[u:] = 1. + (0.06 - 0.42*((57600./(vdelsq1[:] + 57600. + vf1[:])) +
-                         (57600./(vdelmsq1[:] + 57600. + vmf1[:]))))/(1. + 0.3*vf2[:])
+        self.scale[u:] = \
+            1. + (0.06 - 0.42*((57600./(vdelsq1[:] + 57600. + vf1[:])) +
+                  (57600./(vdelmsq1[:] + 57600. + vmf1[:]))))/(1. + 0.3*vf2[:])
 
     def spectra(self, temperature, pressure, vmr):
         nh2o = dry_air_number_density(pressure, temperature, vmr)*vmr["H2O"]
         n = air_number_density(pressure, temperature, vmr)
         rad = radiation_term(self.grid()[:], temperature)
-        return (1. - (nh2o/n))*(pressure/P0)*(T0/temperature)*1.e-20*nh2o*rad* \
-               self.scale[:]*self.data.data[:]
+        return \
+            (1. - (nh2o/n))*(pressure/P0)*(T0/temperature)*1.e-20*nh2o*rad * \
+            self.scale[:]*self.data.data[:]
 
     def grid(self):
         return self.data.wavenumbers()
